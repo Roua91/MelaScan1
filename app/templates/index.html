@@ -1,48 +1,165 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MelaScan</title>
-</head>
-<body>
-    <header>
-        <h1>MelaScan</h1>
-        <p>Accurate and reliable melanoma detection for certified clinics</p>
-    </header>
-
-    <nav>
-        <a href="#about">About</a>
-        <a href="{{ url_for('registration.clinic_registration') }}">Register</a>
-        <a href="{{ url_for('auth.login') }}">Login</a>
-        <a href="#documentation">Documentation</a>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>MelaScan - AI-Powered Melanoma Detection</title>
+    
+        <!-- Link to External CSS -->
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    </head>       
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background: linear-gradient(to right, rgb(242, 228, 255), #f2e6ff);
+        color: #000; /* Changed text color to black */
+      }
+      .navbar {
+        background: rgb(224, 217, 235);
+      }
+      .navbar-brand,
+      .nav-link {
+        color: #000 !important; /* Changed navbar text to black */
+      }
+      .hero {
+        text-align: center;
+        padding: 100px 20px;
+        background: url("{{ url_for('static', filename='melanoma-homepage.jpg') }}")
+            center/cover,
+          linear-gradient(
+            to right,
+            rgba(221, 203, 247, 0.8),
+            rgba(230, 204, 255, 0.8)
+          );
+        color: #000; /* Changed hero text color to black */
+        position: relative;
+      }
+      .hero h1 {
+        font-size: 3rem;
+        font-weight: bold;
+      }
+      .hero p {
+        font-size: 1.2rem;
+        margin-bottom: 20px;
+      }
+      .buttons a {
+        margin: 10px;
+        padding: 12px 25px;
+        font-size: 1.1rem;
+        border-radius: 5px;
+      }
+      .btn-primary {
+        background-color: #b380ff;
+        border: none;
+      }
+      .btn-primary:hover {
+        background-color: #9966cc;
+      }
+      .btn-light {
+        color: #333;
+        border: 1px solid rgb(206, 194, 224);
+      }
+      .btn-light:hover {
+        background-color: rgb(200, 189, 218);
+        color: white;
+      }
+      .content-section {
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0px 4px 8px rgba(7, 7, 7, 0.1);
+      }
+      footer {
+        background: rgb(199, 189, 214);
+        color: black; /* Changed footer text to black */
+        text-align: center;
+        padding: 15px 0;
+        margin-top: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg">
+      <div class="container">
+        <a class="navbar-brand" href="#">MelaScan</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-bs-toggle="collapse"
+          data-bs-target="#navbarNav"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="#about">About</a>
+            </li>
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="{{ url_for('registration.clinic_registration') }}"
+                >Register</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#documentation">Documentation</a>
+            </li>
+          </ul>
+        </div>
+      </div>
     </nav>
 
-    <div class="container">
-        <div class="hero">
-            <h2>Streamline Your Melanoma Detection Process</h2>
-            <p>With MelaScan, clinicians can access an AI-powered second opinion to improve patient outcomes.</p>
-        </div>
-
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="container">
+        <h1>AI-Powered Melanoma Detection</h1>
+        <p>Accurate and reliable melanoma detection for certified clinics</p>
         <div class="buttons">
-            <a href="{{ url_for('registration.clinic_registration') }}">Register Your Clinic</a>
-            <a href="{{ url_for('auth.login') }}">Login</a>
+          <a
+            href="{{ url_for('registration.clinic_registration') }}"
+            class="btn btn-primary"
+            >Register Your Clinic</a
+          >
+          <a href="{{ url_for('auth.login') }}" class="btn btn-light">Login</a>
         </div>
+      </div>
+    </section>
 
-        <section id="about">
-            <h3>About MelaScan</h3>
-            <p>MelaScan is a third-party solution designed for certified dermatological clinics. It helps dermatologists analyze moles and provides reliable insights to aid in melanoma detection.</p>
-        </section>
-
-        <section id="documentation">
-            <h3>Documentation</h3>
-            <p>Documentation will be available soon.</p>
-            <!-- Removed documentation link for now -->
-        </section>
+    <!-- Main Content -->
+    <div class="container my-5">
+      <div class="row justify-content-center">
+        <div class="col-md-10 content-section">
+          <div class="row">
+            <div class="col-md-6">
+              <h3 id="about">About MelaScan</h3>
+              <p>
+                MelaScan is a third-party AI-powered solution designed for
+                certified dermatological clinics. It helps dermatologists
+                analyze moles and provides reliable insights to aid in melanoma
+                detection.
+              </p>
+            </div>
+            <div class="col-md-6">
+              <h3 id="documentation">Documentation</h3>
+              <p>Documentation will be available soon.</p>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
 
+    <!-- Footer -->
     <footer>
-        <p>&copy; 2024 MelaScan. All Rights Reserved.</p>
+      <p>&copy; 2024 MelaScan. All Rights Reserved.</p>
     </footer>
-</body>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
 </html>
