@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app, session, abort, send_from_directory
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
 import os
@@ -9,25 +9,27 @@ from app.models import ClinicRegistration, User, Clinic, UserClinicMap
 from app.extensions import db
 from app.services.email_service import send_credentials_email
 from app.services.password_service import PasswordService
+from flask_login import login_user, logout_user, login_required, current_user
 
+# Blueprint definitions
 registration_bp = Blueprint('registration', __name__)
 auth_bp = Blueprint('auth', __name__)
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
-
+# Helper function
 def is_admin():
-    return session.get('is_admin', False)
+    return current_user.is_authenticated and current_user.is_admin
 
+# Registration routes
 @registration_bp.route('/register/clinic', methods=['GET', 'POST'])
 def clinic_registration():
     form = ClinicRegistrationForm()
     
-    # Ensure at least one doctor field exists
     if len(form.doctors) == 0:
         form.doctors.append_entry()
     
     if request.method == 'POST':
         try:
-            # Process doctor data
             doctor_data = []
             i = 0
             while f'doctors-{i}-name' in request.form:
@@ -37,7 +39,6 @@ def clinic_registration():
                 })
                 i += 1
             
-            # Handle file upload
             if 'license_document' in request.files:
                 license_file = request.files['license_document']
                 if license_file.filename != '':
@@ -47,7 +48,6 @@ def clinic_registration():
                     file_path = os.path.join(upload_folder, filename)
                     license_file.save(file_path)
             
-            # Create registration record
             registration = ClinicRegistration(
                 clinic_name=request.form.get('clinic_name'),
                 clinic_address=request.form.get('clinic_address'),
@@ -81,10 +81,44 @@ def add_doctor():
     form.doctors.append_entry()
     return render_template('registration/_doctor_form.html', doctor=form.doctors[-1], index=len(form.doctors))
 
-@registration_bp.route('/admin/process_registration/<int:application_id>', methods=['POST'])
+@registration_bp.route('/track/<int:application_id>')
+def track_application(application_id):
+    application = ClinicRegistration.query.get_or_404(application_id)
+    return render_template('registration/track_application.html', 
+                         application=application,
+                         status_message=get_status_message(application.status))
+
+# Admin routes
+@admin_bp.route('/dashboard')
+@login_required
+def dashboard():
+    if not current_user.is_admin:
+        abort(403)
+    
+    registrations = ClinicRegistration.query.order_by(
+        ClinicRegistration.submitted_at.desc()
+    ).all()
+    
+    return render_template('admin/dashboard.html', registrations=registrations)
+
+@admin_bp.route('/registrations/<int:reg_id>')
+@login_required
+def view_application(reg_id):
+    if not current_user.is_admin:
+        abort(403)
+    
+    registration = ClinicRegistration.query.get_or_404(reg_id)
+    doctors = json.loads(registration.doctor_names) if registration.doctor_names else []
+    
+    return render_template('admin/view_application.html', 
+                         registration=registration, 
+                         doctors=doctors)
+
+@admin_bp.route('/process_registration/<int:application_id>', methods=['POST'])
+@login_required
 def process_registration(application_id):
-    if not is_admin():
-        return "Unauthorized", 403
+    if not current_user.is_admin:
+        abort(403)
     
     application = ClinicRegistration.query.get_or_404(application_id)
     
@@ -138,7 +172,7 @@ def process_registration(application_id):
             
             application.status = 'approved'
             application.processed_at = datetime.utcnow()
-            application.processed_by = session.get('user_id')  # Simple session ID
+            application.processed_by = current_user.id
             
             db.session.commit()
             
@@ -153,57 +187,56 @@ def process_registration(application_id):
         rejection_reason = request.form.get('rejection_reason')
         if not rejection_reason:
             flash('Please provide a rejection reason', 'danger')
-            return redirect(url_for('registration.process_registration', application_id=application_id))
+            return redirect(url_for('admin.view_application', reg_id=application_id))
         
         application.status = 'rejected'
         application.rejection_reason = rejection_reason
         application.processed_at = datetime.utcnow()
-        application.processed_by = session.get('user_id')
+        application.processed_by = current_user.id
         db.session.commit()
         
         flash('Application rejected', 'success')
     
-    return redirect(url_for('registration.admin_view_registrations'))
+    return redirect(url_for('admin.dashboard'))
 
-@registration_bp.route('/admin/registrations')
-def admin_view_registrations():
-    if not is_admin():
-        return "Unauthorized", 403
+@admin_bp.route('/registrations')
+@login_required
+def view_registrations():
+    if not current_user.is_admin:
+        abort(403)
     
     applications = ClinicRegistration.query.filter_by(status='pending').all()
-    return render_template('registration/registrations.html', applications=applications)
+    return render_template('admin/registrations.html', applications=applications)
 
-def get_status_message(status):
-    messages = {
-        'pending': 'Your application is under review',
-        'approved': 'Your application has been approved!',
-        'rejected': 'Your application was rejected'
-    }
-    return messages.get(status, 'Unknown application status')
+@admin_bp.route('/download/<path:filename>')
+@login_required
+def download_file(filename):
+    if not current_user.is_admin:
+        abort(403)
+    
+    upload_folder = current_app.config['UPLOAD_FOLDERS']['registration']
+    return send_from_directory(upload_folder, filename, as_attachment=True)
 
-@registration_bp.route('/track/<int:application_id>')
-def track_application(application_id):
-    application = ClinicRegistration.query.get_or_404(application_id)
-    return render_template('registration/track_application.html', application=application,
-        status_message=get_status_message(application.status))
-
-
-## LOG IN ##
+# Auth routes
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
+    if current_user.is_authenticated:
+        if current_user.is_admin:
+            return redirect(url_for('admin.dashboard'))
+        elif current_user.role == 'local_admin':
+            return redirect(url_for('clinic.dashboard'))
+        else:
+            return redirect(url_for('doctor.dashboard'))
+    
     form = LoginForm()
     
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         
         if user and check_password_hash(user.password_hash, form.password.data):
-            session['user_id'] = user.id
-            session['user_role'] = user.role
-            session['username'] = user.username
-            
+            login_user(user)
             flash('Login successful!', 'success')
             
-            # Redirect based on user role
             if user.role == 'admin':
                 return redirect(url_for('admin.dashboard'))
             elif user.role == 'local_admin':
@@ -213,10 +246,20 @@ def login():
         else:
             flash('Invalid email or password', 'danger')
     
-    return render_template('login.html', form=form)
+    return render_template('auth/login.html', form=form)
 
 @auth_bp.route('/logout')
+@login_required
 def logout():
-    session.clear()
+    logout_user()
     flash('You have been logged out.', 'info')
-    return redirect(url_for('home.home'))
+    return redirect(url_for('auth.login'))
+
+# Helper function
+def get_status_message(status):
+    messages = {
+        'pending': 'Your application is under review',
+        'approved': 'Your application has been approved!',
+        'rejected': 'Your application was rejected'
+    }
+    return messages.get(status, 'Unknown application status')

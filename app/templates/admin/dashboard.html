@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - MelaScan</title>
+</head>
+<body>
+    <h1>Clinic Registrations</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Clinic Name</th>
+                <th>Admin Email</th>
+                <th>Doctors</th>
+                <th>Status</th>
+                <th>Submitted</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reg in registrations %}
+            <tr>
+                <td>{{ reg.id }}</td>
+                <td>{{ reg.clinic_name }}</td>
+                <td>{{ reg.admin_email }}</td>
+                <td>{{ reg.doctor_count }}</td>
+                <td class="status-{{ reg.status }}">{{ reg.status|title }}</td>
+                <td>{{ reg.submitted_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td class="action-btns">
+                    <!-- Changed from registration.view_application to admin.view_application -->
+                    <a href="{{ url_for('admin.view_application', reg_id=reg.id) }}" class="btn">View</a>
+                    {% if reg.status == 'pending' %}
+                        <!-- Changed from registration.process_registration to admin.process_registration -->
+                        <form method="POST" action="{{ url_for('admin.process_registration', application_id=reg.id) }}" style="display: inline;">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" name="action" value="approve" class="btn approve">Approve</button>
+                            <button type="submit" name="action" value="reject" class="btn reject">Reject</button>
+                            <textarea name="rejection_reason" placeholder="Reason (if rejecting)" rows="1"></textarea>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
