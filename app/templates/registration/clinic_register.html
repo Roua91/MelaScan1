@@ -4,76 +4,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Clinic | MelaScan</title>
+    <style>
+        .form-group { margin-bottom: 1rem; }
+        label { display: block; margin-bottom: 0.5rem; }
+        input, textarea { width: 100%; padding: 0.5rem; }
+        .doctor-entry { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; }
+    </style>
 </head>
 <body>
     <header>
         <h1>MelaScan Clinic Registration</h1>
-        <p>Complete this form to request access for your clinic</p>
     </header>
 
     <nav>
-        <a href="/">Home</a>
-        <a href="/login">Login</a>
+        <a href="{{ url_for('home.home') }}">Home</a>
+        <a href="{{ url_for('auth.login') }}">Login</a>
     </nav>
 
     <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
         <form method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
             <h2>Clinic Information</h2>
-            <div>
-                <label>Clinic Name</label>
-                <input type="text" name="clinic_name" required>
+            <div class="form-group">
+                <label>{{ form.clinic_name.label }}</label>
+                {{ form.clinic_name(class="form-control") }}
             </div>
             
-            <div>
-                <label>Clinic Address</label>
-                <textarea name="clinic_address" required></textarea>
+            <div class="form-group">
+                <label>{{ form.clinic_address.label }}</label>
+                {{ form.clinic_address(class="form-control", rows=3) }}
             </div>
             
-            <div>
-                <label>Contact Number</label>
-                <input type="tel" name="contact_number" required>
+            <div class="form-group">
+                <label>{{ form.contact_number.label }}</label>
+                {{ form.contact_number(class="form-control") }}
             </div>
             
-            <div>
-                <label>License Number</label>
-                <input type="text" name="license_number" required>
+            <div class="form-group">
+                <label>{{ form.license_number.label }}</label>
+                {{ form.license_number(class="form-control") }}
             </div>
             
-            <div>
-                <label>License Document</label>
-                <input type="file" name="license_document" accept=".pdf,.jpg,.png" required>
+            <div class="form-group">
+                <label>{{ form.license_document.label }}</label>
+                {{ form.license_document(class="form-control") }}
             </div>
 
             <h2>Admin Information</h2>
-            <div>
-                <label>Admin Name</label>
-                <input type="text" name="admin_name" required>
+            <div class="form-group">
+                <label>{{ form.admin_name.label }}</label>
+                {{ form.admin_name(class="form-control") }}
             </div>
             
-            <div>
-                <label>Admin Email</label>
-                <input type="email" name="admin_email" required>
+            <div class="form-group">
+                <label>{{ form.admin_email.label }}</label>
+                {{ form.admin_email(class="form-control") }}
             </div>
             
-            <div>
-                <label>Admin Phone</label>
-                <input type="tel" name="admin_phone" required>
+            <div class="form-group">
+                <label>{{ form.admin_phone.label }}</label>
+                {{ form.admin_phone(class="form-control") }}
             </div>
 
             <h2>Doctors</h2>
             <div id="doctors-container">
-                <!-- Dynamic doctor fields will be added here -->
+                {% for doctor in form.doctors %}
+                <div class="doctor-entry">
+                <h3>Doctor #{{ loop.index }}</h3>
+                <div class="form-group">
+                    <label>Doctor Name</label>
+                    <input type="text" 
+                        name="doctors-{{ loop.index0 }}-name" 
+                        value="{{ doctor.name.data or '' }}"
+                        class="form-control" 
+                        required>
+                </div>
+                <div class="form-group">
+                    <label>Doctor Email</label>
+                    <input type="email" 
+                        name="doctors-{{ loop.index0 }}-email" 
+                        value="{{ doctor.email.data or '' }}"
+                        class="form-control" 
+                        required>
+                </div>
+                </div>
+                {% endfor %}
             </div>
+            
             <button type="button" id="add-doctor">Add Doctor</button>
 
-            <button type="submit">Submit Application</button>
+
+            <div class="form-group">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
         </form>
     </div>
 
+    <footer>
+        <p>&copy; 2024 MelaScan</p>
+    </footer>
+
     <script>
-        // JavaScript to handle dynamic doctor fields
         document.getElementById('add-doctor').addEventListener('click', function() {
             const container = document.getElementById('doctors-container');
             const index = container.children.length;
@@ -81,22 +123,24 @@
             const doctorDiv = document.createElement('div');
             doctorDiv.className = 'doctor-entry';
             doctorDiv.innerHTML = `
-                <h3>Doctor #${index + 1}</h3>
-                <div>
-                    <label>Name</label>
-                    <input type="text" name="doctors-${index}-name" required>
-                </div>
-                <div>
-                    <label>Email</label>
-                    <input type="email" name="doctors-${index}-email" required>
-                </div>
+            <h3>Doctor #${index + 1}</h3>
+            <div class="form-group">
+                <label>Doctor Name</label>
+                <input type="text" 
+                    name="doctors-${index}-name" 
+                    class="form-control" 
+                    required>
+            </div>
+            <div class="form-group">
+                <label>Doctor Email</label>
+                <input type="email" 
+                    name="doctors-${index}-email" 
+                    class="form-control" 
+                    required>
+            </div>
             `;
             container.appendChild(doctorDiv);
         });
     </script>
-
-    <footer>
-        <p>&copy; 2024 MelaScan</p>
-    </footer>
 </body>
 </html>

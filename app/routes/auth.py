@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, request, session
+from flask import Blueprint, render_template, redirect, url_for, flash, request, current_app
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
 import os
@@ -13,7 +13,7 @@ from app.services.password_service import PasswordService
 registration_bp = Blueprint('registration', __name__)
 auth_bp = Blueprint('auth', __name__)
 
-# Simple admin check (replace with your preferred method)
+
 def is_admin():
     return session.get('is_admin', False)
 
@@ -21,38 +21,44 @@ def is_admin():
 def clinic_registration():
     form = ClinicRegistrationForm()
     
+    # Ensure at least one doctor field exists
+    if len(form.doctors) == 0:
+        form.doctors.append_entry()
+    
     if request.method == 'POST':
         try:
-            doctor_count = int(request.form.get('doctor_count', 1))
-            form.doctors.entries = doctor_count
-        except (ValueError, KeyError):
-            form.doctors.entries = 1
-    
-    if form.validate_on_submit():
-        try:
-            license_file = form.license_document.data
-            filename = secure_filename(license_file.filename)
-            upload_folder = 'uploads'  # Simplified static folder
-            os.makedirs(upload_folder, exist_ok=True)
-            file_path = os.path.join(upload_folder, filename)
-            license_file.save(file_path)
+            # Process doctor data
+            doctor_data = []
+            i = 0
+            while f'doctors-{i}-name' in request.form:
+                doctor_data.append({
+                    'name': request.form[f'doctors-{i}-name'],
+                    'email': request.form[f'doctors-{i}-email']
+                })
+                i += 1
             
-            doctors_data = {}
-            for doctor in form.doctors:
-                if doctor.name.data and doctor.email.data:
-                    doctors_data[doctor.name.data] = doctor.email.data
+            # Handle file upload
+            if 'license_document' in request.files:
+                license_file = request.files['license_document']
+                if license_file.filename != '':
+                    filename = secure_filename(license_file.filename)
+                    upload_folder = current_app.config['UPLOAD_FOLDERS']['registration']
+                    os.makedirs(upload_folder, exist_ok=True)
+                    file_path = os.path.join(upload_folder, filename)
+                    license_file.save(file_path)
             
+            # Create registration record
             registration = ClinicRegistration(
-                clinic_name=form.clinic_name.data,
-                clinic_address=form.clinic_address.data,
-                contact_number=form.contact_number.data,
-                admin_name=form.admin_name.data,
-                admin_email=form.admin_email.data,
-                admin_phone=form.admin_phone.data,
-                license_number=form.license_number.data,
+                clinic_name=request.form.get('clinic_name'),
+                clinic_address=request.form.get('clinic_address'),
+                contact_number=request.form.get('contact_number'),
+                admin_name=request.form.get('admin_name'),
+                admin_email=request.form.get('admin_email'),
+                admin_phone=request.form.get('admin_phone'),
+                license_number=request.form.get('license_number'),
                 license_document=file_path,
-                doctor_count=len(doctors_data),
-                doctor_names=json.dumps(doctors_data),
+                doctor_count=len(doctor_data),
+                doctor_names=json.dumps(doctor_data),
                 status='pending'
             )
             
@@ -64,9 +70,16 @@ def clinic_registration():
             
         except Exception as e:
             db.session.rollback()
-            flash('Registration failed. Please try again.', 'danger')
+            current_app.logger.error(f"Registration failed: {str(e)}")
+            flash(f'Registration failed: {str(e)}', 'danger')
     
     return render_template('registration/clinic_register.html', form=form)
+
+@registration_bp.route('/add-doctor', methods=['POST'])
+def add_doctor():
+    form = ClinicRegistrationForm()
+    form.doctors.append_entry()
+    return render_template('registration/_doctor_form.html', doctor=form.doctors[-1], index=len(form.doctors))
 
 @registration_bp.route('/admin/process_registration/<int:application_id>', methods=['POST'])
 def process_registration(application_id):
@@ -160,11 +173,19 @@ def admin_view_registrations():
     applications = ClinicRegistration.query.filter_by(status='pending').all()
     return render_template('registration/registrations.html', applications=applications)
 
+def get_status_message(status):
+    messages = {
+        'pending': 'Your application is under review',
+        'approved': 'Your application has been approved!',
+        'rejected': 'Your application was rejected'
+    }
+    return messages.get(status, 'Unknown application status')
+
 @registration_bp.route('/track/<int:application_id>')
 def track_application(application_id):
     application = ClinicRegistration.query.get_or_404(application_id)
-    return render_template('registration/track_application.html', application=application)
-
+    return render_template('registration/track_application.html', application=application,
+        status_message=get_status_message(application.status))
 
 
 ## LOG IN ##
