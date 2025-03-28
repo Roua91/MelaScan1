@@ -2,23 +2,48 @@ from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
+from flask_login import UserMixin
 
-class User(db.Model):  
-    __tablename__ = 'users'
+class User(db.Model, UserMixin):
+    __tablename__ = 'users'  # Explicit table name
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
-    role = db.Column(db.String(20), nullable=False)  # 'global_admin', 'local_admin', 'doctor'
+    role = db.Column(db.String(20), nullable=False)
+    
+    # Relationships
+    clinic_mappings = db.relationship(
+        'UserClinicMap', 
+        back_populates='user',
+        foreign_keys='[UserClinicMap.user_id]'
+    )
+    processed_registrations = db.relationship(
+        'ClinicRegistration',
+        back_populates='processor',
+        foreign_keys='[ClinicRegistration.processed_by]'
+    )
 
-    clinic_relationships = db.relationship('UserClinicMap', backref='user')
-    processed_applications = db.relationship('ClinicRegistration', backref='processed_by_user')
-
+    @property
+    def is_admin(self):
+        return self.role == 'admin'
+    
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
     
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
+
+class UserClinicMap(db.Model):
+    __tablename__ = 'user_clinic_map'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.id'), nullable=False)
+    role_at_clinic = db.Column(db.String(20))
+    
+    # Relationships
+    user = db.relationship('User', back_populates='clinic_mappings')
+    clinic = db.relationship('Clinic', back_populates='user_mappings')
 
 class Clinic(db.Model):
     __tablename__ = 'clinics'
@@ -27,17 +52,19 @@ class Clinic(db.Model):
     address = db.Column(db.String(250), nullable=False)
     contact_number = db.Column(db.String(20), nullable=False)
     license_number = db.Column(db.String(50))
-    status = db.Column(db.String(20), default='pending')  # 'pending', 'approved', 'rejected'
+    status = db.Column(db.String(20), default='pending')
     
-    user_relationships = db.relationship('UserClinicMap', backref='clinic')
-    patient_relationships = db.relationship('PatientClinicMap', backref='clinic')
-
-class UserClinicMap(db.Model):
-    __tablename__ = 'user_clinic_map'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.id'), nullable=False)
-    role_at_clinic = db.Column(db.String(20))  # 'local_admin', 'doctor'
+    # Relationships
+    user_mappings = db.relationship(
+        'UserClinicMap', 
+        back_populates='clinic',
+        foreign_keys='[UserClinicMap.clinic_id]'
+    )
+    patient_mappings = db.relationship(
+        'PatientClinicMap', 
+        back_populates='clinic',
+        foreign_keys='[PatientClinicMap.clinic_id]'
+    )
 
 class Patient(db.Model):
     __tablename__ = 'patients'
@@ -46,7 +73,7 @@ class Patient(db.Model):
     contact_number = db.Column(db.String(20), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=False)
     
-    clinic_relationships = db.relationship('PatientClinicMap', backref='patient')
+    clinic_relationships = db.relationship('PatientClinicMap', back_populates='patient')
     images = db.relationship('Image', backref='patient')
 
 class PatientClinicMap(db.Model):
@@ -54,6 +81,9 @@ class PatientClinicMap(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
     clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.id'), nullable=False)
+    
+    clinic = db.relationship('Clinic', back_populates='patient_mappings')
+    patient = db.relationship('Patient', back_populates='clinic_relationships')
 
 class Image(db.Model):
     __tablename__ = 'images'
@@ -90,8 +120,16 @@ class ClinicRegistration(db.Model):
     processed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     rejection_reason = db.Column(db.Text)
     
+    # Add this relationship
+    processor = db.relationship(
+        'User', 
+        back_populates='processed_registrations',
+        foreign_keys=[processed_by]
+    )
+    
     def get_doctor_list(self):
         try:
             return json.loads(self.doctor_names) if self.doctor_names else {}
         except json.JSONDecodeError:
             return {}
+    
