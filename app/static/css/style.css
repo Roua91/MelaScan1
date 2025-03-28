@@ -1,4 +1,4 @@
 .hero {
     background: linear-gradient(to right, rgba(221, 203, 247, 0.8), rgba(230, 204, 255, 0.8)),
-                url("../images/melanoma-homepage.jpg") center/cover;
+                url("/static/images/melanoma-homepage.jpg") center/cover;
 }

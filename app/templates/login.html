@@ -1,50 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login | MelaScan</title>
-</head>
-<body>
+  </head>
+  <body>
     <header>
-        <h1>MelaScan Login</h1>
+      <h1>MelaScan Login</h1>
     </header>
 
     <nav>
-        <a href="{{ url_for('home.home') }}">Home</a>
-        <a href="{{ url_for('registration.clinic_registration') }}">Register</a>
+      <a href="{{ url_for('home.home') }}">Home</a>
+      <a href="{{ url_for('registration.clinic_registration') }}">Register</a>
     </nav>
 
     <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flashes">
-                    {% for category, message in messages %}
-                        <p class="{{ category }}">{{ message }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="flashes">
+        {% for category, message in messages %}
+        <p class="{{ category }}">{{ message }}</p>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
 
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            
-            <div>
-                <label>Email</label>
-                <input type="email" name="email" required>
-            </div>
-            
-            <div>
-                <label>Password</label>
-                <input type="password" name="password" required>
-            </div>
-            
-            <button type="submit">Login</button>
-        </form>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <div>
+          <label>Email</label>
+          <input type="email" name="email" required />
+        </div>
+
+        <div>
+          <label>Password</label>
+          <input type="password" name="password" required />
+        </div>
+
+        <button type="submit">Login</button>
+      </form>
     </div>
 
     <footer>
-        <p>&copy; 2024 MelaScan</p>
+      <p>&copy; 2024 MelaScan</p>
     </footer>
-</body>
+  </body>
 </html>
