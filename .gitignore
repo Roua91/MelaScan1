@@ -18,3 +18,4 @@ migrations/
 
 venv/
 
+setup_db.py
