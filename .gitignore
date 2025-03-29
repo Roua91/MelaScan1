@@ -16,5 +16,5 @@ uploads/
 # Ignore migrations folder (optional)
 migrations/
 
-
+venv/
 
