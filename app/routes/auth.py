@@ -85,8 +85,8 @@ def add_doctor():
 def track_application(application_id):
     application = ClinicRegistration.query.get_or_404(application_id)
     return render_template('registration/track_application.html', 
-                         application=application,
-                         status_message=get_status_message(application.status))
+        application=application,
+        status_message=get_status_message(application.status))
 
 # Admin routes
 @admin_bp.route('/dashboard')
@@ -110,9 +110,8 @@ def view_application(reg_id):
     registration = ClinicRegistration.query.get_or_404(reg_id)
     doctors = json.loads(registration.doctor_names) if registration.doctor_names else []
     
-    return render_template('admin/view_application.html', 
-                         registration=registration, 
-                         doctors=doctors)
+    return render_template('admin/view_application.html', registration=registration, 
+        doctors=doctors)
 
 @admin_bp.route('/process_registration/<int:application_id>', methods=['POST'])
 @login_required
