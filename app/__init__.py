@@ -55,7 +55,8 @@ def create_app():
 
     # Register blueprints
     from app.routes.home import home_bp
-    from app.routes.auth import auth_bp, registration_bp, admin_bp
+    from app.routes.auth import auth_bp, registration_bp
+    from app.routes.admin import admin_bp 
     
     app.register_blueprint(home_bp)
     app.register_blueprint(registration_bp, url_prefix='/registration')

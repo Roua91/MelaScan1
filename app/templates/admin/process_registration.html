@@ -8,28 +8,70 @@
 <body>
     <header>
         <h1>Review Clinic Registration</h1>
+        <nav>
+            <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('admin.view_registrations') }}">All Applications</a>
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </nav>
     </header>
 
-    <nav>
-        <a href="/admin/registrations">Back to Registrations</a>
-    </nav>
+    <main class="container">
+        <section class="application-info">
+            <h2>{{ application.clinic_name }}</h2>
+            
+            <div class="info-section">
+                <h3>Clinic Details</h3>
+                <p><strong>Address:</strong> {{ application.clinic_address }}</p>
+                <p><strong>Contact Number:</strong> {{ application.contact_number }}</p>
+                <p><strong>License Number:</strong> {{ application.license_number }}</p>
+                {% if application.license_document %}
+                <p>
+                    <strong>License Document:</strong>
+                    <a href="{{ url_for('admin.download_file', filename=application.license_document.split('/')[-1]) }}" 
+                    target="_blank">View Document</a>
+                </p>
+                {% endif %}
+            </div>
 
-    <div class="container">
-        <h2>{{ application.clinic_name }}</h2>
-        <p><strong>Contact:</strong> {{ application.admin_email }} | {{ application.contact_number }}</p>
-        <p><strong>Address:</strong> {{ application.clinic_address }}</p>
-        <p><strong>License:</strong> {{ application.license_number }}</p>
-        
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" name="action" value="approve">Approve</button>
-            <button type="submit" name="action" value="reject">Reject</button>
-            <textarea name="rejection_reason" placeholder="Reason for rejection (if applicable)"></textarea>
-        </form>
-    </div>
+            <div class="info-section">
+                <h3>Administrator</h3>
+                <p><strong>Name:</strong> {{ application.admin_name }}</p>
+                <p><strong>Email:</strong> {{ application.admin_email }}</p>
+                <p><strong>Phone:</strong> {{ application.admin_phone }}</p>
+            </div>
+
+            <div class="info-section">
+                <h3>Doctors ({{ application.doctor_count }})</h3>
+                <ul>
+                    {% for doctor in doctors %}
+                    <li>{{ doctor.name }} - {{ doctor.email }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </section>
+
+        <section class="action-section">
+            <h3>Process Application</h3>
+            <form method="POST" action="{{ url_for('admin.process_registration', application_id=application.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div class="form-group">
+                    <button type="submit" name="action" value="approve" class="btn-approve">Approve Application</button>
+                    <button type="submit" name="action" value="reject" class="btn-reject">Reject Application</button>
+                </div>
+                
+                <div class="form-group">
+                    <label for="rejection_reason">Rejection Reason (required if rejecting):</label>
+                    <textarea name="rejection_reason" id="rejection_reason" 
+                        placeholder="Please provide specific reasons for rejection..." 
+                        rows="4" required></textarea>
+                </div>
+            </form>
+        </section>
+    </main>
 
     <footer>
-        <p>&copy; 2024 MelaScan Admin</p>
+        <p>&copy; 2024 MelaScan Admin Portal</p>
     </footer>
 </body>
 </html>
