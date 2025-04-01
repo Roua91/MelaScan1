@@ -110,7 +110,7 @@ def login():
         else:
             flash('Invalid email or password', 'danger')
     
-    return render_template('auth/login.html', form=form)
+    return render_template('login.html', form=form)
 
 @auth_bp.route('/logout')
 @login_required
