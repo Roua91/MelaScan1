@@ -8,28 +8,97 @@
 <body>
     <header>
         <h1>Review Clinic Registration</h1>
+        <nav>
+            <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('admin.view_registrations') }}">All Applications</a>
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </nav>
     </header>
 
-    <nav>
-        <a href="/admin/registrations">Back to Registrations</a>
-    </nav>
+    <main>
+        <!-- Clinic Information Section -->
+        <section>
+            <h2>{{ application.clinic_name }}</h2>
+            <p><strong>Status:</strong> {{ application.status|title }}</p>
+            <p><strong>Submitted:</strong> {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
+            
+            <h3>Clinic Details</h3>
+            <p><strong>Address:</strong> {{ application.clinic_address }}</p>
+            <p><strong>Contact:</strong> {{ application.contact_number }}</p>
+            <p><strong>License Number:</strong> {{ application.license_number }}</p>
+            
+            {% if application.license_document %}
+            <p>
+                <strong>License Document:</strong>
+                <a href="{{ url_for('admin.download_file', filename=application.license_document.split('/')[-1]) }}" target="_blank">
+                    View Document
+                </a>
+            </p>
+            {% endif %}
+        </section>
 
-    <div class="container">
-        <h2>{{ application.clinic_name }}</h2>
-        <p><strong>Contact:</strong> {{ application.admin_email }} | {{ application.contact_number }}</p>
-        <p><strong>Address:</strong> {{ application.clinic_address }}</p>
-        <p><strong>License:</strong> {{ application.license_number }}</p>
-        
-        <form method="POST">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <button type="submit" name="action" value="approve">Approve</button>
-            <button type="submit" name="action" value="reject">Reject</button>
-            <textarea name="rejection_reason" placeholder="Reason for rejection (if applicable)"></textarea>
-        </form>
-    </div>
+        <!-- Admin Information Section -->
+        <section>
+            <h3>Admin Information</h3>
+            <p><strong>Name:</strong> {{ application.admin_name }}</p>
+            <p><strong>Email:</strong> {{ application.admin_email }}</p>
+            <p><strong>Phone:</strong> {{ application.admin_phone }}</p>
+        </section>
+
+        <!-- Doctors Information Section -->
+        <section>
+            <h3>Doctors ({{ application.doctor_count }})</h3>
+            <ul>
+                {% for doctor in doctors %}
+                <li>{{ doctor.name }} - {{ doctor.email }}</li>
+                {% endfor %}
+            </ul>
+        </section>
+
+        <!-- Processing Section (only show for pending applications) -->
+        {% if application.status == 'pending' %}
+        <section>
+            <h3>Process Application</h3>
+            <form method="POST" action="{{ url_for('admin.process_registration', application_id=application.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                
+                <div>
+                    <button type="submit" name="action" value="approve">Approve</button>
+                    <button type="submit" name="action" value="reject">Reject</button>
+                </div>
+                
+                <div>
+                    <label for="rejection_reason">Rejection Reason (if rejecting):</label>
+                    <textarea name="rejection_reason" id="rejection_reason" rows="4"></textarea>
+                </div>
+            </form>
+        </section>
+        {% endif %}
+
+        <!-- Status History Section -->
+        {% if application.status != 'pending' %}
+        <section>
+            <h3>Processing Details</h3>
+            <p><strong>Processed:</strong> {{ application.processed_at.strftime('%Y-%m-%d') }}</p>
+            {% if application.status == 'rejected' and application.rejection_reason %}
+            <p><strong>Rejection Reason:</strong> {{ application.rejection_reason }}</p>
+            {% endif %}
+        </section>
+        {% endif %}
+    </main>
 
     <footer>
         <p>&copy; 2024 MelaScan Admin</p>
     </footer>
+
+    <script>
+        // Basic confirmation for reject action
+        document.querySelector('button[value="reject"]')?.addEventListener('click', function(e) {
+            const reason = document.getElementById('rejection_reason').value;
+            if (!reason || !confirm('Are you sure you want to reject this application?')) {
+                e.preventDefault();
+            }
+        });
+    </script>
 </body>
 </html>
