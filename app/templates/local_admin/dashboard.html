@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ clinic.name }} Dashboard | MelaScan</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        section { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        ul { list-style-type: none; padding: 0; }
+        li { margin: 5px 0; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>{{ clinic.name }} Dashboard</h1>
+        <nav>
+            <a href="{{ url_for('local_admin.dashboard') }}">Home</a> |
+            <a href="{{ url_for('local_admin.add_doctor') }}">Add Doctor</a> |
+            <a href="{{ url_for('local_admin.add_patient') }}">Add Patient</a> |
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <!-- Clinic Info -->
+    <section>
+        <h2>Clinic Details</h2>
+        <p><strong>Address:</strong> {{ clinic.address }}</p>
+        <p><strong>Contact:</strong> {{ clinic.contact_number }}</p>
+        <p><strong>License:</strong> {{ clinic.license_number }}</p>
+    </section>
+
+    <!-- Doctors List -->
+    <section>
+        <h2>Doctors ({{ doctors|length }})</h2>
+        <ul>
+            {% for doctor in doctors %}
+            <li>{{ doctor.email }} ({{ doctor.username }})</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <!-- Patients List -->
+    <section>
+        <h2>Patients ({{ patients|length }})</h2>
+        <ul>
+            {% for patient in patients %}
+            <li>{{ patient.name }} - {{ patient.contact_number }} (DOB: {{ patient.date_of_birth }})</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flashes">
+                {% for category, message in messages %}
+                    <p style="color: {% if category == 'success' %}green{% else %}red{% endif %}">
+                        {{ message }}
+                    </p>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+</body>
+</html>

@@ -4,12 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register Clinic | MelaScan</title>
-    <style>
-        .form-group { margin-bottom: 1rem; }
-        label { display: block; margin-bottom: 0.5rem; }
-        input, textarea { width: 100%; padding: 0.5rem; }
-        .doctor-entry { border: 1px solid #ddd; padding: 1rem; margin-bottom: 1rem; }
-    </style>
 </head>
 <body>
     <header>
@@ -35,78 +29,87 @@
         <form method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <h2>Clinic Information</h2>
-            <div class="form-group">
-                <label>{{ form.clinic_name.label }}</label>
-                {{ form.clinic_name(class="form-control") }}
-            </div>
-            
-            <div class="form-group">
-                <label>{{ form.clinic_address.label }}</label>
-                {{ form.clinic_address(class="form-control", rows=3) }}
-            </div>
-            
-            <div class="form-group">
-                <label>{{ form.contact_number.label }}</label>
-                {{ form.contact_number(class="form-control") }}
-            </div>
-            
-            <div class="form-group">
-                <label>{{ form.license_number.label }}</label>
-                {{ form.license_number(class="form-control") }}
-            </div>
-            
-            <div class="form-group">
-                <label>{{ form.license_document.label }}</label>
-                {{ form.license_document(class="form-control") }}
-            </div>
-
-            <h2>Admin Information</h2>
-            <div class="form-group">
-                <label>{{ form.admin_name.label }}</label>
-                {{ form.admin_name(class="form-control") }}
-            </div>
-            
-            <div class="form-group">
-                <label>{{ form.admin_email.label }}</label>
-                {{ form.admin_email(class="form-control") }}
-            </div>
-            
-            <div class="form-group">
-                <label>{{ form.admin_phone.label }}</label>
-                {{ form.admin_phone(class="form-control") }}
-            </div>
-
-            <h2>Doctors</h2>
-            <div id="doctors-container">
-                {% for doctor in form.doctors %}
-                <div class="doctor-entry">
-                <h3>Doctor #{{ loop.index }}</h3>
+            <!-- Clinic Information Section -->
+            <section class="form-section">
+                <h2>Clinic Information</h2>
+                
                 <div class="form-group">
-                    <label>Doctor Name</label>
-                    <input type="text" 
-                        name="doctors-{{ loop.index0 }}-name" 
-                        value="{{ doctor.name.data or '' }}"
-                        class="form-control" 
-                        required>
+                    <label>{{ form.clinic_name.label }}</label>
+                    {{ form.clinic_name() }}
                 </div>
+                
                 <div class="form-group">
-                    <label>Doctor Email</label>
-                    <input type="email" 
-                        name="doctors-{{ loop.index0 }}-email" 
-                        value="{{ doctor.email.data or '' }}"
-                        class="form-control" 
-                        required>
+                    <label>{{ form.clinic_address.label }}</label>
+                    {{ form.clinic_address(rows=3) }}
                 </div>
+                
+                <div class="form-group">
+                    <label>{{ form.contact_number.label }}</label>
+                    {{ form.contact_number() }}
                 </div>
-                {% endfor %}
-            </div>
-            
-            <button type="button" id="add-doctor">Add Doctor</button>
+                
+                <div class="form-group">
+                    <label>{{ form.license_number.label }}</label>
+                    {{ form.license_number() }}
+                </div>
+                
+                <div class="form-group">
+                    <label>{{ form.license_document.label }}</label>
+                    {{ form.license_document() }}
+                    <small>Upload your clinic license</small>
+                </div>
+            </section>
 
+            <!-- Admin Information Section -->
+            <section class="form-section">
+                <h2>Admin Information</h2>
+                
+                <div class="form-group">
+                    <label>{{ form.admin_name.label }}</label>
+                    {{ form.admin_name() }}
+                </div>
+                
+                <div class="form-group">
+                    <label>{{ form.admin_email.label }}</label>
+                    {{ form.admin_email() }}
+                </div>
+                
+                <div class="form-group">
+                    <label>{{ form.admin_phone.label }}</label>
+                    {{ form.admin_phone() }}
+                </div>
+            </section>
 
+            <!-- Doctors Section -->
+            <section class="form-section">
+                <h2>Doctors</h2>
+                <div id="doctors-container">
+                    {% for doctor in form.doctors %}
+                    <div class="doctor-entry form-group">
+                        <h3>Doctor #{{ loop.index }}</h3>
+                        <div class="form-group">
+                            {{ doctor.form.name.label }}
+                            {{ doctor.form.name() }}
+                            {% if doctor.form.name.errors %}
+                                <div class="error">{{ doctor.form.name.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            {{ doctor.form.email.label }}
+                            {{ doctor.form.email() }}
+                            {% if doctor.form.email.errors %}
+                                <div class="error">{{ doctor.form.email.errors[0] }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="button" id="add-doctor">Add Doctor</button>
+            </section>
+
+            <!-- Submit Section -->
             <div class="form-group">
-                {{ form.submit(class="btn btn-primary") }}
+                {{ form.submit() }}
             </div>
         </form>
     </div>
@@ -118,28 +121,21 @@
     <script>
         document.getElementById('add-doctor').addEventListener('click', function() {
             const container = document.getElementById('doctors-container');
-            const index = container.children.length;
+            const index = container.getElementsByClassName('doctor-entry').length;
             
-            const doctorDiv = document.createElement('div');
-            doctorDiv.className = 'doctor-entry';
-            doctorDiv.innerHTML = `
-            <h3>Doctor #${index + 1}</h3>
-            <div class="form-group">
-                <label>Doctor Name</label>
-                <input type="text" 
-                    name="doctors-${index}-name" 
-                    class="form-control" 
-                    required>
-            </div>
-            <div class="form-group">
-                <label>Doctor Email</label>
-                <input type="email" 
-                    name="doctors-${index}-email" 
-                    class="form-control" 
-                    required>
-            </div>
-            `;
-            container.appendChild(doctorDiv);
+            fetch("{{ url_for('registration.add_doctor') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': "{{ csrf_token() }}"
+                }
+            })
+            .then(response => response.text())
+            .then(html => {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = html;
+                container.appendChild(tempDiv.firstChild);
+            });
         });
     </script>
 </body>

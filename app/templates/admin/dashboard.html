@@ -53,7 +53,7 @@
                         <td class="status-{{ reg.status }}">{{ reg.status|title }}</td>
                         <td>{{ reg.submitted_at.strftime('%Y-%m-%d') }}</td>
                         <td>
-                            <a href="{{ url_for('admin.view_application', reg_id=reg.id) }}" class="btn">Review</a>
+                            <a href="{{ url_for('admin.process_registration', application_id=reg.id) }}" class="btn">Review</a>
                         </td>
                     </tr>
                     {% endfor %}
