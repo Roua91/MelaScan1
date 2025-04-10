@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Doctor | MelaScan</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        form { max-width: 500px; }
+        label { display: block; margin-top: 10px; }
+        input { width: 100%; padding: 8px; margin-top: 5px; }
+        button { margin-top: 15px; padding: 10px 15px; background: #0066cc; color: white; border: none; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Add New Doctor</h1>
+        <nav>
+            <a href="{{ url_for('local_admin.dashboard') }}">Back to Dashboard</a>
+        </nav>
+    </header>
+
+    <form method="POST" action="{{ url_for('local_admin.add_doctor') }}">
+        {{ form.hidden_tag() }}
+        
+        <label>Email:</label>
+        {{ form.email(size=30) }}
+        {% if form.email.errors %}
+            <span class="error">{{ form.email.errors[0] }}</span>
+        {% endif %}
+
+        <label>Temporary Password:</label>
+        {{ form.password(size=30) }}
+        {% if form.password.errors %}
+            <span class="error">{{ form.password.errors[0] }}</span>
+        {% endif %}
+
+        <button type="submit">Add Doctor</button>
+    </form>
+</body>
+</html>

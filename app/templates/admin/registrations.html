@@ -20,7 +20,7 @@
     </header>
 
     <nav>
-        <a href="/admin">Admin Dashboard</a>
+        <a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a>
     </nav>
 
     <div class="container">
@@ -28,7 +28,9 @@
         <div class="application">
             <h3>{{ application.clinic_name }}</h3>
             <p>Submitted: {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
-            <a href="/admin/process_registration/{{ application.id }}">Review Application</a>
+            <a href="{{ url_for('admin.process_registration', application_id=application.id) }}">
+                Review Application
+            </a>
         </div>
         {% else %}
         <p>No pending applications</p>
