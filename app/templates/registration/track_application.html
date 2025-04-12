@@ -1,41 +1,31 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Application Status | MelaScan</title>
+    <title>Track Application</title>
 </head>
 <body>
-    <header>
-        <h1>Application Status</h1>
-    </header>
-
-    <nav>
-        <a href="/">Home</a>
-    </nav>
-
-    <div class="container">
-        <h2>Status: {{ application.status|title }}</h2>
-        <p>Submitted on: {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
-        {% if application.processed_at %}
-            <p>Processed on: {{ application.processed_at.strftime('%Y-%m-%d') }}</p>
+    <h1>Track Your Application</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
         {% endif %}
-        
-        {% if application.status == 'approved' %}
-            <p>Your clinic has been approved! You will receive login credentials via email.</p>
-        {% elif application.status == 'rejected' %}
-            <p>Reason: {{ application.rejection_reason or 'Not specified' }}</p>
-        {% else %}
-            <p>Your application is under review. Please check back later.</p>
-        {% endif %}
-        
-        <h3>Application Details</h3>
-        <p><strong>Clinic Name:</strong> {{ application.clinic_name }}</p>
-        <p><strong>Contact Email:</strong> {{ application.admin_email }}</p>
-    </div>
-
-    <footer>
-        <p>&copy; 2024 MelaScan</p>
-    </footer>
+    {% endwith %}
+    
+    <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <!-- Rest of your form fields -->
+        <div>
+            <label>License Number:</label>
+            <input type="text" name="license_number" required>
+        </div>
+        <div>
+            <label>Admin Email:</label>
+            <input type="email" name="admin_email" required>
+        </div>
+        <button type="submit">Track Application</button>
+    </form>
 </body>
 </html>

@@ -1,68 +1,41 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ clinic.name }} Dashboard | MelaScan</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 20px; }
-        section { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
-        ul { list-style-type: none; padding: 0; }
-        li { margin: 5px 0; }
-        a { color: #0066cc; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-    </style>
+    <title>{{ clinic.name }} Dashboard</title>
 </head>
 <body>
-    <header>
+    <div class="container mt-4">
         <h1>{{ clinic.name }} Dashboard</h1>
-        <nav>
-            <a href="{{ url_for('local_admin.dashboard') }}">Home</a> |
-            <a href="{{ url_for('local_admin.add_doctor') }}">Add Doctor</a> |
-            <a href="{{ url_for('local_admin.add_patient') }}">Add Patient</a> |
-            <a href="{{ url_for('auth.logout') }}">Logout</a>
-        </nav>
-    </header>
-
-    <!-- Clinic Info -->
-    <section>
-        <h2>Clinic Details</h2>
-        <p><strong>Address:</strong> {{ clinic.address }}</p>
-        <p><strong>Contact:</strong> {{ clinic.contact_number }}</p>
-        <p><strong>License:</strong> {{ clinic.license_number }}</p>
-    </section>
-
-    <!-- Doctors List -->
-    <section>
-        <h2>Doctors ({{ doctors|length }})</h2>
-        <ul>
-            {% for doctor in doctors %}
-            <li>{{ doctor.email }} ({{ doctor.username }})</li>
-            {% endfor %}
-        </ul>
-    </section>
-
-    <!-- Patients List -->
-    <section>
-        <h2>Patients ({{ patients|length }})</h2>
-        <ul>
-            {% for patient in patients %}
-            <li>{{ patient.name }} - {{ patient.contact_number }} (DOB: {{ patient.date_of_birth }})</li>
-            {% endfor %}
-        </ul>
-    </section>
-
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="flashes">
-                {% for category, message in messages %}
-                    <p style="color: {% if category == 'success' %}green{% else %}red{% endif %}">
-                        {{ message }}
-                    </p>
-                {% endfor %}
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h3>Clinic Information</h3>
             </div>
-        {% endif %}
-    {% endwith %}
+            <div class="card-body">
+                <p><strong>Address:</strong> {{ clinic.address }}</p>
+                <p><strong>Contact:</strong> {{ clinic.contact_number }}</p>
+                <p><strong>License:</strong> {{ clinic.license_number }}</p>
+            </div>
+        </div>
+        
+        <div class="card mt-4">
+            <div class="card-header">
+                <h3>Medical Team ({{ doctors|length }})</h3>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for doctor in doctors %}
+                    <li class="list-group-item">
+                        {{ doctor.username }} - {{ doctor.email }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-danger">Logout</a>
+        </div>
+    </div>
 </body>
 </html>

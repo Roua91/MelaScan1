@@ -61,17 +61,18 @@
             <h3>Process Application</h3>
             <form method="POST" action="{{ url_for('admin.process_registration', application_id=application.id) }}">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                
+            
                 <div>
                     <button type="submit" name="action" value="approve">Approve</button>
                     <button type="submit" name="action" value="reject">Reject</button>
                 </div>
-                
+            
                 <div>
                     <label for="rejection_reason">Rejection Reason (if rejecting):</label>
                     <textarea name="rejection_reason" id="rejection_reason" rows="4"></textarea>
                 </div>
             </form>
+            
         </section>
         {% endif %}
 

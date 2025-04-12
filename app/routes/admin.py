@@ -8,6 +8,8 @@ from app.models import ClinicRegistration, Clinic, User, UserClinicMap
 from app.extensions import db
 from app.services.email_service import send_credentials_email, send_rejection_email
 from app.services.password_service import PasswordService
+from werkzeug.security import generate_password_hash, check_password_hash
+
 
 admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
@@ -44,6 +46,12 @@ def view_registrations():
     applications = ClinicRegistration.query.filter_by(status='pending').all()
     return render_template('admin/registrations.html', applications=applications)
 
+
+from app.models import Clinic, ClinicCredential, User, UserClinicMap
+from app.services.password_service import PasswordService  # Assuming PasswordService is properly defined
+from datetime import datetime
+from werkzeug.security import generate_password_hash
+
 @admin_bp.route('/process_registration/<int:application_id>', methods=['GET', 'POST'])
 @login_required
 def process_registration(application_id):
@@ -52,13 +60,11 @@ def process_registration(application_id):
     
     application = ClinicRegistration.query.get_or_404(application_id)
     doctors = json.loads(application.doctor_names) if application.doctor_names else []
-    
+
     if request.method == 'POST':
-        action = request.form.get('action')
-        
-        if action == 'approve':
-            try:
-                # Create clinic
+        try:
+            if request.form.get('action') == 'approve':
+                # Create clinic first (no dependency on users)
                 clinic = Clinic(
                     name=application.clinic_name,
                     address=application.clinic_address,
@@ -68,96 +74,83 @@ def process_registration(application_id):
                 )
                 db.session.add(clinic)
                 db.session.flush()
-                
-                # Create admin user
-                admin_password = PasswordService.generate_permanent_password()
+
+                # Create admin user (without is_active)
+                admin_temp_password = PasswordService.generate_permanent_password()
                 admin = User(
                     username=application.admin_email.split('@')[0],
                     email=application.admin_email,
-                    role='local_admin'
+                    role='local_admin'  # Removed is_active
                 )
-                admin.set_password(admin_password)
+                admin.set_password(admin_temp_password)
                 db.session.add(admin)
                 db.session.flush()
-                
-                # Create doctors
+
+                # Store admin credentials
+                db.session.add(ClinicCredential(
+                    user_id=admin.id,
+                    clinic_id=clinic.id,
+                    temp_password=admin_temp_password,
+                    is_valid=True
+                ))
+
+                # Process doctors (without is_active)
                 for doctor_info in doctors:
-                    doctor_password = PasswordService.generate_permanent_password()
+                    doctor_temp_password = PasswordService.generate_permanent_password()
                     doctor = User(
                         username=doctor_info['email'].split('@')[0],
                         email=doctor_info['email'],
-                        role='doctor'
+                        role='doctor'  # Removed is_active
                     )
-                    doctor.set_password(doctor_password)
+                    doctor.set_password(doctor_temp_password)
                     db.session.add(doctor)
                     db.session.flush()
-                    
-                    # Map doctors to clinic
+
+                    db.session.add(ClinicCredential(
+                        user_id=doctor.id,
+                        clinic_id=clinic.id,
+                        temp_password=doctor_temp_password,
+                        is_valid=True
+                    ))
                     db.session.add(UserClinicMap(
                         user_id=doctor.id,
                         clinic_id=clinic.id,
                         role_at_clinic='doctor'
                     ))
-                    
-                    # Send credentials email
-                    send_credentials_email(
-                        doctor_info['email'], 
-                        clinic.name, 
-                        doctor_password
-                    )
-                
-                # Map admin to clinic
+
+                # Create admin-clinic mapping
                 db.session.add(UserClinicMap(
                     user_id=admin.id,
                     clinic_id=clinic.id,
                     role_at_clinic='admin'
                 ))
-                
-                # Update application status
+
+                # Finalize approval
                 application.status = 'approved'
                 application.processed_at = datetime.utcnow()
                 application.processed_by = current_user.id
-                
                 db.session.commit()
-                
-                # Send admin credentials
-                send_credentials_email(
-                    application.admin_email, 
-                    clinic.name, 
-                    admin_password
-                )
-                
-                flash('Clinic approved successfully!', 'success')
+
+                flash('Clinic approved successfully! Temporary credentials generated.', 'success')
                 return redirect(url_for('admin.dashboard'))
-                
-            except Exception as e:
-                db.session.rollback()
-                flash(f'Approval failed: {str(e)}', 'danger')
-        
-        elif action == 'reject':
-            rejection_reason = request.form.get('rejection_reason')
-            if not rejection_reason:
-                flash('Please provide a rejection reason', 'danger')
-                return redirect(url_for('admin.process_registration', application_id=application_id))
-            
-            application.status = 'rejected'
-            application.rejection_reason = rejection_reason
-            application.processed_at = datetime.utcnow()
-            application.processed_by = current_user.id
-            db.session.commit()
-            
-            send_rejection_email(
-                email=application.admin_email,
-                clinic_name=application.clinic_name,
-                reason=rejection_reason
-            )
-            
-            flash('Application rejected', 'success')
-            return redirect(url_for('admin.dashboard'))
-    
-    return render_template('admin/process_registration.html',
-        application=application,
+
+            elif request.form.get('action') == 'reject':
+                application.status = 'rejected'
+                application.rejection_reason = request.form.get('rejection_reason')
+                db.session.commit()
+                flash('Application rejected', 'danger')
+                return redirect(url_for('admin.dashboard'))
+
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Approval failed: {str(e)}", exc_info=True)
+            flash(f'Approval failed: {str(e)}', 'danger')
+            return redirect(url_for('admin.process_registration', application_id=application_id))
+
+    return render_template('admin/process_registration.html', 
+        application=application, 
         doctors=doctors)
+
 
 @admin_bp.route('/download/<path:filename>')
 @login_required

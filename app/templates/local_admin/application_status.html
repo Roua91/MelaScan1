@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Status | MelaScan</title>
+</head>
+<body>
+    <header>
+        <h1>Application Status</h1>
+    </header>
+
+    <div class="container">
+        <h2>Status: {{ application.status|title }}</h2>
+        <p>Submitted on: {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
+        {% if application.processed_at %}
+            <p>Processed on: {{ application.processed_at.strftime('%Y-%m-%d') }}</p>
+        {% endif %}
+        
+        {% if application.status == 'approved' %}
+            <p>Your clinic has been approved! You can use the following credentials to log in.</p>
+        
+            <h3>Admin Credentials:</h3>
+            <p><strong>Username:</strong> {{ application.admin_email }}</p>
+            <p><strong>Password:</strong> {{ application.admin_password }}</p>  <!-- Display admin password -->
+        
+            <h3>Doctor Credentials:</h3>
+            {% for doctor in json.loads(application.doctor_names) %}
+                <p><strong>Doctor:</strong> {{ doctor['email'] }}</p>
+                <p><strong>Password:</strong> {{ application.get_doctor_passwords()[doctor['email']] }}</p>  <!-- Display doctor passwords -->
+            {% endfor %}
+        {% endif %}
+    
+        {% elif application.status == 'rejected' %}
+            <p>Reason: {{ application.rejection_reason or 'Not specified' }}</p>
+        {% else %}
+            <p>Your application is under review. Please check back later.</p>
+        {% endif %}
+        
+        <h3>Application Details</h3>
+        <p><strong>Clinic Name:</strong> {{ application.clinic_name }}</p>
+        <p><strong>Contact Email:</strong> {{ application.admin_email }}</p>
+    </div>
+</body>
+</html>

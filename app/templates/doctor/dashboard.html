@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Doctor Dashboard</title>
+</head>
+<body>
+    <h1>Welcome, Dr. {{ current_user.username }}</h1>
+    
+    <h2>Your Clinics</h2>
+    <ul>
+        {% for clinic in clinics %}
+        <li>{{ clinic.clinic.name }} - {{ clinic.clinic.address }}</li>
+        {% endfor %}
+    </ul>
+    
+    <a href="{{ url_for('auth.logout') }}">Logout</a>
+</body>
+</html>

@@ -6,10 +6,11 @@ import os
 import json
 from datetime import datetime
 from app.forms import ClinicRegistrationForm, LoginForm
-from app.models import ClinicRegistration, User
-from app.extensions import db
+from app.models import ClinicRegistration, User, Clinic, UserClinicMap, ClinicCredential
 from flask_login import login_user, logout_user, login_required, current_user
 import logging
+from app.extensions import db
+
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
@@ -152,32 +153,85 @@ def track_application(application_id):
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
-        if current_user.is_admin:
-            return redirect(url_for('admin.dashboard'))
-        elif current_user.role == 'local_admin':
-            return redirect(url_for('clinic.dashboard'))
-        else:
-            return redirect(url_for('doctor.dashboard'))
+        return redirect_to_dashboard()
     
     form = LoginForm()
-    
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         
         if user and check_password_hash(user.password_hash, form.password.data):
-            login_user(user)
-            flash('Login successful!', 'success')
+            # Check for valid temporary credential
+            temp_cred = ClinicCredential.query.filter_by(
+                user_id=user.id,
+                is_valid=True
+            ).first()
             
-            if user.role == 'admin':
-                return redirect(url_for('admin.dashboard'))
-            elif user.role == 'local_admin':
-                return redirect(url_for('clinic.dashboard'))
-            else:
-                return redirect(url_for('doctor.dashboard'))
-        else:
-            flash('Invalid email or password', 'danger')
+            login_user(user)  # Login before potential redirect
+            
+            if temp_cred:
+                flash('Please change your temporary password', 'warning')
+                return redirect(url_for('auth.change_password'))
+            
+            return redirect_to_dashboard()
+        
+        flash('Invalid credentials', 'danger')
     
     return render_template('login.html', form=form)
+
+@auth_bp.route('/redirect-dashboard')
+@login_required
+def redirect_to_dashboard():
+    if not current_user.is_authenticated:
+        return redirect(url_for('auth.login'))
+    
+    if current_user.role == 'admin':
+        return redirect(url_for('admin.dashboard'))
+    elif current_user.role == 'local_admin':
+        return redirect(url_for('local_admin.dashboard'))
+    elif current_user.role == 'doctor':
+        return redirect(url_for('doctor.dashboard'))
+    
+    flash('Unknown user role', 'danger')
+    return redirect(url_for('auth.login'))
+
+
+
+@auth_bp.route('/change-password', methods=['GET', 'POST'])
+@login_required
+def change_password():
+    if request.method == 'POST':
+        new_password = request.form.get('new_password', '').strip()
+        confirm_password = request.form.get('confirm_password', '').strip()
+
+        # Validate both fields are filled
+        if not new_password or not confirm_password:
+            flash('Both password fields are required', 'danger')
+            return redirect(url_for('auth.change_password'))
+
+        # Validate password match
+        if new_password != confirm_password:
+            flash('Passwords do not match', 'danger')
+            return redirect(url_for('auth.change_password'))
+
+        # Validate password strength
+        if len(new_password) < 8:
+            flash('Password must be at least 8 characters', 'danger')
+            return redirect(url_for('auth.change_password'))
+
+        # Update password
+        try:
+            current_user.set_password(new_password)
+            ClinicCredential.query.filter_by(user_id=current_user.id).update({'is_valid': False})
+            db.session.commit()
+            flash('Password changed successfully!', 'success')
+            return redirect(url_for('auth.redirect_to_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error updating password. Please try again.', 'danger')
+            return redirect(url_for('auth.change_password'))
+
+    return render_template('registration/change_password.html')
+
 
 @auth_bp.route('/logout')
 @login_required
@@ -193,3 +247,70 @@ def get_status_message(status):
         'rejected': 'Your application was rejected'
     }
     return messages.get(status, 'Unknown application status')
+
+from werkzeug.security import check_password_hash
+
+@auth_bp.route('/track-application', methods=['GET', 'POST'])
+def track_application():
+    if request.method == 'POST':
+        license_number = request.form.get('license_number')
+        admin_email = request.form.get('admin_email')
+        
+        if not license_number or not admin_email:
+            flash('Please provide both license number and admin email', 'danger')
+            return redirect(url_for('auth.track_application'))
+        
+        registration = ClinicRegistration.query.filter_by(
+            license_number=license_number,
+            admin_email=admin_email
+        ).first()
+        
+        if not registration:
+            flash('No application found with these credentials', 'danger')
+            return redirect(url_for('auth.track_application'))
+        
+        if registration.status != 'approved':
+            return render_template('registration/track_status.html',
+                application=registration,
+                status=registration.status,
+                rejection_reason=registration.rejection_reason)
+        
+        # Moved clinic definition inside approved status block
+        clinic = Clinic.query.filter_by(license_number=license_number).first()
+        if not clinic:
+            flash('Clinic not found', 'danger')
+            return redirect(url_for('auth.track_application'))
+
+        # Get admin credentials
+        admin = User.query.filter_by(email=admin_email).first()
+        admin_credential = ClinicCredential.query.filter_by(
+            user_id=admin.id,
+            clinic_id=clinic.id  # Now clinic is guaranteed to exist here
+        ).first() if admin else None
+        
+        # Get doctor credentials
+        doctors = []
+        doctor_users = User.query.join(UserClinicMap).filter(
+            UserClinicMap.clinic_id == clinic.id,
+            UserClinicMap.role_at_clinic == 'doctor'
+        ).all()
+        
+        for doctor in doctor_users:
+            cred = ClinicCredential.query.filter_by(
+                user_id=doctor.id,
+                clinic_id=clinic.id
+            ).first()
+            doctors.append({
+                'name': doctor.username,
+                'email': doctor.email,
+                'password': cred.temp_password if cred else '[not set]'
+            })
+        
+        return render_template('registration/track_status.html',
+            application=registration,
+            status='approved',
+            admin_credential=admin_credential,
+            doctors=doctors,
+            clinic=clinic)
+    
+    return render_template('registration/track_application.html')
