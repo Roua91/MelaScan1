@@ -81,12 +81,14 @@ def create_app():
     from app.routes.auth import auth_bp, registration_bp
     from app.routes.admin import admin_bp 
     from app.routes.local_admin import local_admin_bp
+    from app.routes.doctors import doctor_bp
     
     app.register_blueprint(home_bp)
     app.register_blueprint(registration_bp, url_prefix='/registration')
     app.register_blueprint(auth_bp, url_prefix='/auth')
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(local_admin_bp, url_prefix='/local_admin')
+    app.register_blueprint(doctor_bp, url_prefix='/doctor')
 
 
 

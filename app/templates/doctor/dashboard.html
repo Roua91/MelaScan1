@@ -8,11 +8,20 @@
     
     <h2>Your Clinics</h2>
     <ul>
-        {% for clinic in clinics %}
-        <li>{{ clinic.clinic.name }} - {{ clinic.clinic.address }}</li>
+        {% for clinic_info in clinics_data %}
+        <li>
+            {{ clinic_info.clinic.name }} - {{ clinic_info.clinic.address }}<br>
+            Total Patients: {{ clinic_info.patient_count }}
+
+            <ul>
+                {% for patient in clinic_info.patients %}
+                <li>{{ patient.name }} (ID: {{ patient.id }})</li>
+                {% endfor %}
+            </ul>
+        </li>
         {% endfor %}
     </ul>
-    
+
     <a href="{{ url_for('auth.logout') }}">Logout</a>
 </body>
 </html>

@@ -4,12 +4,6 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import json
 from flask_login import UserMixin
 
-
-from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
-
-from werkzeug.security import generate_password_hash, check_password_hash
-
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
 
@@ -19,11 +13,14 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), nullable=False)
 
-    # Relationship with UserClinicMap (This is what might be missing)
-    clinic_mappings = db.relationship('UserClinicMap', back_populates='user', lazy=True)
-
-    # Other relationships and properties
-    processed_registrations = db.relationship('ClinicRegistration', back_populates='processor', foreign_keys='ClinicRegistration.processed_by')
+    # Relationships
+    clinic_assignments = db.relationship('UserClinicMap', back_populates='user')
+    processed_registrations = db.relationship(
+        'ClinicRegistration', 
+        back_populates='processor', 
+        foreign_keys='ClinicRegistration.processed_by'
+    )
+    credentials = db.relationship('ClinicCredential', back_populates='user')
 
     @property
     def is_admin(self):
@@ -35,20 +32,9 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
 
-
-class UserClinicMap(db.Model):
-    __tablename__ = 'user_clinic_map'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.id'), nullable=False)
-    role_at_clinic = db.Column(db.String(20))
-    
-    # Relationships
-    user = db.relationship('User', back_populates='clinic_mappings')
-    clinic = db.relationship('Clinic', back_populates='user_mappings')
-
 class Clinic(db.Model):
     __tablename__ = 'clinics'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     address = db.Column(db.String(250), nullable=False)
@@ -57,57 +43,75 @@ class Clinic(db.Model):
     status = db.Column(db.String(20), default='pending')
     
     # Relationships
-    user_mappings = db.relationship(
-        'UserClinicMap', 
-        back_populates='clinic',
-        foreign_keys='[UserClinicMap.clinic_id]'
-    )
-    patient_mappings = db.relationship(
-        'PatientClinicMap', 
-        back_populates='clinic',
-        foreign_keys='[PatientClinicMap.clinic_id]'
-    )
+    staff_assignments = db.relationship('UserClinicMap', back_populates='clinic')
+    patient_assignments = db.relationship('PatientClinicMap', back_populates='clinic')
+    credentials = db.relationship('ClinicCredential', back_populates='clinic')
+
+class UserClinicMap(db.Model):
+    __tablename__ = 'user_clinic_map'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.id'), nullable=False)
+    role_at_clinic = db.Column(db.String(20), nullable=False)
+
+    # Relationships
+    user = db.relationship('User', back_populates='clinic_assignments')
+    clinic = db.relationship('Clinic', back_populates='staff_assignments')
 
 class Patient(db.Model):
     __tablename__ = 'patients'
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     contact_number = db.Column(db.String(20), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=False)
     
+    # Relationships
     clinic_relationships = db.relationship('PatientClinicMap', back_populates='patient')
-    images = db.relationship('Image', backref='patient')
+    images = db.relationship('Image', back_populates='patient')
+    reports = db.relationship('Report', back_populates='patient')
 
 class PatientClinicMap(db.Model):
     __tablename__ = 'patient_clinic_map'
+
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
     clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.id'), nullable=False)
     
-    clinic = db.relationship('Clinic', back_populates='patient_mappings')
+    # Relationships
+    clinic = db.relationship('Clinic', back_populates='patient_assignments')
     patient = db.relationship('Patient', back_populates='clinic_relationships')
 
 class Image(db.Model):
     __tablename__ = 'images'
+
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(500), nullable=False)
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    patient = db.relationship('Patient', back_populates='images')
+    reports = db.relationship('Report', back_populates='image')
 
 class Report(db.Model):
     __tablename__ = 'reports'
+
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
     image_id = db.Column(db.Integer, db.ForeignKey('images.id'), nullable=False)
     prediction_result = db.Column(db.String(50), nullable=False)
     generated_on = db.Column(db.DateTime, default=datetime.utcnow)
-
-from werkzeug.security import generate_password_hash, check_password_hash
-import json
+    
+    # Relationships
+    patient = db.relationship('Patient', back_populates='reports')
+    image = db.relationship('Image', back_populates='reports')
 
 class ClinicRegistration(db.Model):
     __tablename__ = 'clinic_registrations'
+
     id = db.Column(db.Integer, primary_key=True)
     clinic_name = db.Column(db.String(150), nullable=False)
     clinic_address = db.Column(db.String(250), nullable=False)
@@ -124,19 +128,21 @@ class ClinicRegistration(db.Model):
     processed_at = db.Column(db.DateTime)
     processed_by = db.Column(db.Integer, db.ForeignKey('users.id'))
     rejection_reason = db.Column(db.Text)
-    
-    # New fields to store credentials
     admin_password = db.Column(db.String(128))
+    doctor_passwords = db.Column(db.Text)  # JSON string
     
-    admin_password = db.Column(db.String(128))  # Hashed admin password
-    doctor_passwords = db.Column(db.Text)  # JSON string of hashed doctor passwords
-
     # Relationships
-    processor = db.relationship('User', back_populates='processed_registrations', foreign_keys=[processed_by])
+    processor = db.relationship(
+        'User', 
+        back_populates='processed_registrations', 
+        foreign_keys=[processed_by]
+    )
     
     def set_doctor_passwords(self, doctor_passwords_dict):
         """Save doctor passwords as a JSON string."""
-        self.doctor_passwords = json.dumps({k: generate_password_hash(v) for k, v in doctor_passwords_dict.items()})
+        self.doctor_passwords = json.dumps({
+            k: generate_password_hash(v) for k, v in doctor_passwords_dict.items()
+        })
 
     def get_doctor_passwords(self):
         """Return the stored doctor passwords as a dictionary."""
@@ -151,7 +157,7 @@ class ClinicRegistration(db.Model):
             return json.loads(self.doctor_names) if self.doctor_names else []
         except json.JSONDecodeError:
             return []
-        
+
 class ClinicCredential(db.Model):
     __tablename__ = 'clinic_credentials'
     
@@ -162,14 +168,10 @@ class ClinicCredential(db.Model):
     is_valid = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
-    # Add relationship to User
-    user = db.relationship('User', backref='credentials')
+    # Relationships
+    user = db.relationship('User', back_populates='credentials')
+    clinic = db.relationship('Clinic', back_populates='credentials')
     
     def invalidate(self):
+        """Invalidate the temporary password."""
         self.is_valid = False
-
-        
-
-
-
-
