@@ -16,6 +16,11 @@
         <p>These credentials are temporary and will be invalidated after first use.</p>
     </div>
 
+    <!-- Add this button group -->
+    <div class="action-buttons">
+        <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login Now</a>
+    </div>
+
     <h4>Admin Access:</h4>
     <p>Email: {{ application.admin_email }}</p>  <!-- Get email from application instead -->
     <p class="text-danger">Temporary Password: {{ admin_credential.temp_password }}</p>
