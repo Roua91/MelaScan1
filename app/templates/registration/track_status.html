@@ -4,55 +4,110 @@
     <title>Application Status</title>
 </head>
 <body>
+    <header>
+        <nav>
+            <a href="{{ url_for('home.home') }}">Home</a> |
+            <a href="{{ url_for('auth.track_application') }}">Track Application</a>
+        </nav>
+    </header>
+
     <h1>Application Status</h1>
     
     <h2>{{ application.clinic_name }}</h2>
     <p>Status: <strong>{{ status|title }}</strong></p>
     
-    <!-- Single conditional block -->
     {% if status == 'approved' %}
     <div class="alert alert-warning">
         <h3>Important Security Notice</h3>
         <p>These credentials are temporary and will be invalidated after first use.</p>
     </div>
 
-    <!-- Add this button group -->
     <div class="action-buttons">
         <a href="{{ url_for('auth.login') }}" class="btn btn-primary">Login Now</a>
     </div>
 
     <h4>Admin Access:</h4>
-    <p>Email: {{ application.admin_email }}</p>  <!-- Get email from application instead -->
-    <p class="text-danger">Temporary Password: {{ admin_credential.temp_password }}</p>
+    <p>Email: {{ application.admin_email }}</p>
+    <p class="text-danger">Temporary Password: {{ admin_credential.temp_password if admin_credential.is_valid else 'Already activated' }}</p>
 
-        {% if doctors %}
-        <h4>Doctors:</h4>
-        <ul class="list-group">
-            {% for doctor in doctors %}
-            <li class="list-group-item">
-                <strong>{{ doctor.name }}</strong><br>
-                Email: {{ doctor.email }}<br>
-                {% if doctor.password != '[not set]' %}
-                Temporary Password: <span class="text-danger">{{ doctor.password }}</span>
-                {% else %}
-                <span class="text-warning">Password not set</span>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p class="text-muted">No doctors registered for this clinic.</p>
-        {% endif %}
+    {% if doctors %}
+    <h4>Doctors:</h4>
+    <ul class="list-group">
+        {% for doctor in doctors %}
+        <li class="list-group-item">
+            <strong>{{ doctor.name }}</strong><br>
+            Email: {{ doctor.email }}<br>
+            {% if doctor.password != '[not set]' %}
+            Temporary Password: <span class="text-danger">{{ doctor.password }}</span>
+            {% else %}
+            <span class="text-warning">Password not set</span>
+            {% endif %}
+        </li>
+        {% endfor %}
     </ul>
-    
-    {% elif status == 'rejected' and rejection_reason %}
-    <h3>Rejection Reason:</h3>
-    <p>{{ rejection_reason }}</p>
-    
     {% else %}
-    <p>Your application is still under review.</p>
+    <p class="text-muted">No doctors registered for this clinic.</p>
     {% endif %}
-    
-    <a href="{{ url_for('auth.track_application') }}">Back to tracking</a>
+
+    {% elif status == 'rejected' %}
+    <div class="alert alert-warning">
+        <h3>Application Rejected</h3>
+        {% if rejection_reason %}
+        <p><strong>Reason:</strong> {{ rejection_reason }}</p>
+        {% endif %}
+    </div>
+
+    <div class="action-buttons">
+        <a href="{{ url_for('registration.clinic_registration') }}" class="btn btn-primary">
+            Submit New Application
+        </a>
+        <a href="mailto:support@melascan.com" class="btn btn-outline-secondary">
+            Contact Support
+        </a>
+    </div>
+
+    {% else %}
+    <div class="pending-status">
+        <div class="alert alert-info">
+            <h3>⏳ Application Under Review</h3>
+            <p>Submitted on <strong>{{ application.submitted_at.strftime('%B %d, %Y') }}</strong></p>
+        </div>
+
+        <div class="progress-steps">
+            <div class="step active">
+                <span class="step-number">1</span>
+                <span class="step-text">Submitted</span>
+            </div>
+            <div class="step">
+                <span class="step-number">2</span>
+                <span class="step-text">Under Review</span>
+            </div>
+            <div class="step">
+                <span class="step-number">3</span>
+                <span class="step-text">Approval</span>
+            </div>
+        </div>
+
+        <h4>What to expect next:</h4>
+        <ul>
+            <li>Typical review time: <strong>1-2 business days</strong></li>
+            <li>Notifications will be sent to <strong>{{ application.admin_email }}</strong></li>
+            <li>Check back here for updates</li>
+        </ul>
+
+        <div class="action-buttons">
+            <a href="{{ url_for('auth.track_application') }}" class="btn btn-primary">
+                Refresh Status
+            </a>
+            <a href="mailto:support@melascan.com" class="btn btn-outline-secondary">
+                Contact Support
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <footer>
+        <p>&copy; MelaScan</p>
+    </footer>
 </body>
 </html>

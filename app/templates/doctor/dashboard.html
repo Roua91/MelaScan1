@@ -4,24 +4,53 @@
     <title>Doctor Dashboard</title>
 </head>
 <body>
-    <h1>Welcome, Dr. {{ current_user.username }}</h1>
+    <header>
+        <nav>
+            <a href="{{ url_for('doctor.dashboard') }}">Dashboard</a> |
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <h1>Welcome, Dr. {{ current_user.name }}</h1>
     
-    <h2>Your Clinics</h2>
-    <ul>
-        {% for clinic_info in clinics_data %}
-        <li>
-            {{ clinic_info.clinic.name }} - {{ clinic_info.clinic.address }}<br>
-            Total Patients: {{ clinic_info.patient_count }}
-
-            <ul>
-                {% for patient in clinic_info.patients %}
-                <li>{{ patient.name }} (ID: {{ patient.id }})</li>
+    <section>
+        <h2>Search Patients</h2>
+        <form method="GET" action="{{ url_for('doctor.dashboard') }}">
+            <input type="text" name="q" value="{{ search_query }}" placeholder="Search by name or phone...">
+            <button type="submit">Search</button>
+            <a href="{{ url_for('doctor.dashboard') }}">Reset</a>
+        </form>
+    </section>
+    
+    <section>
+        <h2>Your Patients</h2>
+        {% if patients %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Contact</th>
+                    <th>Date of Birth</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for patient in patients %}
+                <tr>
+                    <td>{{ patient.name }}</td>
+                    <td>{{ patient.contact_number }}</td>
+                    <td>{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else 'N/A' }}</td>
+                    <td>
+                        <a href="{{ url_for('doctor.view_patient', patient_id=patient.id) }}">View</a> |
+                        <a href="{{ url_for('doctor.create_report', patient_id=patient.id) }}">New Report</a>
+                    </td>
+                </tr>
                 {% endfor %}
-            </ul>
-        </li>
-        {% endfor %}
-    </ul>
-
-    <a href="{{ url_for('auth.logout') }}">Logout</a>
+            </tbody>
+        </table>
+        {% else %}
+        <p>No patients found.</p>
+        {% endif %}
+    </section>
 </body>
 </html>

@@ -67,6 +67,9 @@
                 <div class="form-group">
                     <label>{{ form.admin_name.label }}</label>
                     {{ form.admin_name() }}
+                    {% if form.admin_name.errors %}
+                        <div class="error">{{ form.admin_name.errors[0] }}</div>
+                    {% endif %}
                 </div>
                 
                 <div class="form-group">

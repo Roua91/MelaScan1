@@ -27,99 +27,63 @@ auth_bp = Blueprint('auth', __name__)
 @registration_bp.route('/register/clinic', methods=['GET', 'POST'])
 def clinic_registration():
     form = ClinicRegistrationForm()
-    logger.debug(f"Initial form data: {form.data}")
-    logger.debug(f"Initial form errors: {form.errors}")
-
+    
     if not form.doctors.entries:
         form.doctors.append_entry()
-        logger.debug("Added initial doctor entry")
 
     if form.validate_on_submit():
-        logger.debug("Form validation passed")
         try:
-            logger.debug(f"Form submitted data: {form.data}")
+            # Process doctor data
             doctor_data = []
-
-            for i, doctor in enumerate(form.doctors):
-                logger.debug(f"Processing doctor {i+1}: {doctor.form.data}")
+            for doctor in form.doctors:
                 if not doctor.form.name.data or not doctor.form.email.data:
-                    logger.error(f"Missing data for doctor {i+1}")
-                    flash(f'Please complete all fields for Doctor {i+1}', 'danger')
+                    flash(f'Please complete all fields for all doctors', 'danger')
                     return render_template('registration/clinic_register.html', form=form)
-
+                
                 doctor_data.append({
                     'name': doctor.form.name.data,
                     'email': doctor.form.email.data
                 })
 
+            # Process license file
             if form.license_document.data:
                 license_file = form.license_document.data
-                logger.debug(f"Processing file upload: {license_file.filename}")
-
                 filename = secure_filename(license_file.filename)
                 upload_folder = os.path.join(current_app.root_path, 'uploads', 'registration')
-                logger.debug(f"Upload folder: {upload_folder}")
-
-                try:
-                    os.makedirs(upload_folder, exist_ok=True)
-                    file_path = os.path.join(upload_folder, filename)
-                    license_file.save(file_path)
-                    stored_path = os.path.join('registration', filename).replace('\\', '/')
-                    logger.debug(f"File saved to: {file_path}")
-                except Exception as e:
-                    logger.error(f"File save failed: {str(e)}")
-                    flash('File upload failed. Please try again.', 'danger')
-                    return render_template('registration/clinic_register.html', form=form)
+                os.makedirs(upload_folder, exist_ok=True)
+                file_path = os.path.join(upload_folder, filename)
+                license_file.save(file_path)
+                stored_path = os.path.join('registration', filename).replace('\\', '/')
             else:
-                logger.error("No license document provided")
                 flash('License document is required', 'danger')
                 return render_template('registration/clinic_register.html', form=form)
 
-            try:
-                registration = ClinicRegistration(
-                    clinic_name=form.clinic_name.data,
-                    clinic_address=form.clinic_address.data,
-                    contact_number=form.contact_number.data,
-                    admin_name=form.admin_name.data,
-                    admin_email=form.admin_email.data,
-                    admin_phone=form.admin_phone.data,
-                    license_number=form.license_number.data,
-                    license_document=stored_path,
-                    doctor_count=len(doctor_data),
-                    doctor_names=json.dumps(doctor_data),
-                    status='pending',
-                    submitted_at=datetime.utcnow()
-                )
-                logger.debug(f"Registration object created: {registration}")
+            # Create registration record
+            registration = ClinicRegistration(
+                clinic_name=form.clinic_name.data,
+                clinic_address=form.clinic_address.data,
+                contact_number=form.contact_number.data,
+                admin_name=form.admin_name.data,  # Store admin name
+                admin_email=form.admin_email.data,
+                admin_phone=form.admin_phone.data,
+                license_number=form.license_number.data,
+                license_document=stored_path,
+                doctor_count=len(doctor_data),
+                doctor_names=json.dumps(doctor_data),  # Store all doctor names
+                status='pending',
+                submitted_at=datetime.utcnow()
+            )
 
-                db.session.add(registration)
-                db.session.flush()
-                logger.debug("Database flush successful")
+            db.session.add(registration)
+            db.session.commit()
 
-                db.session.commit()
-                logger.info("Registration committed successfully")
-
-                flash('Application submitted successfully!', 'success')
-                return redirect(url_for('registration.track_application', application_id=registration.id))
-
-            except Exception as e:
-                db.session.rollback()
-                logger.error(f"Database error: {str(e)}", exc_info=True)
-                if "UNIQUE constraint failed" in str(e):
-                    flash('Email address already registered', 'danger')
-                else:
-                    flash('Database error occurred. Please try again.', 'danger')
+            flash('Application submitted successfully!', 'success')
+            return redirect(url_for('registration.track_application', application_id=registration.id))
 
         except Exception as e:
             db.session.rollback()
-            logger.error(f"Registration failed: {str(e)}", exc_info=True)
+            logger.error(f"Registration failed: {str(e)}")
             flash(f'Registration failed: {str(e)}', 'danger')
-
-    if form.errors:
-        logger.error(f"Form validation errors: {form.errors}")
-        for field, errors in form.errors.items():
-            for error in errors:
-                flash(f"{field}: {error}", 'danger')
 
     return render_template('registration/clinic_register.html', form=form)
 
@@ -220,7 +184,6 @@ def redirect_to_dashboard():
     flash('Unknown user role', 'danger')
     return redirect(url_for('auth.login'))
 
-
 @auth_bp.route('/track-application', methods=['GET', 'POST'])
 def track_application():
     if request.method == 'POST':
@@ -231,14 +194,37 @@ def track_application():
             flash('All fields are required', 'danger')
             return redirect(url_for('auth.track_application'))
 
+        # First check clinic registration record
         registration = ClinicRegistration.query.filter_by(
             license_number=license_number,
-            admin_email=admin_email
+            admin_email=admin_email  # Changed from email to admin_email
         ).first()
 
+        # If no registration found, check active clinics
         if not registration:
-            flash('Invalid credentials', 'danger')
-            return redirect(url_for('auth.track_application'))
+            clinic = Clinic.query.filter_by(
+                license_number=license_number,
+            ).first()
+            
+            if not clinic:
+                flash('Invalid credentials', 'danger')
+                return redirect(url_for('auth.track_application'))
+                
+            admin_mapping = UserClinicMap.query.filter_by(
+                clinic_id=clinic.id,
+                role_at_clinic='admin'
+            ).first()
+            
+            if not admin_mapping:
+                flash('Invalid credentials', 'danger')
+                return redirect(url_for('auth.track_application'))
+                
+            admin = User.query.get(admin_mapping.user_id)
+            if not admin or admin.email != admin_email:  # Now checking against User.email
+                flash('Invalid credentials', 'danger')
+                return redirect(url_for('auth.track_application'))
+
+            return show_clinic_credentials(clinic, admin)
 
         if registration.status != 'approved':
             return render_template('registration/track_status.html',
@@ -247,53 +233,52 @@ def track_application():
                                 rejection_reason=registration.rejection_reason)
 
         clinic = Clinic.query.filter_by(license_number=license_number).first()
-        if not clinic:
-            flash('Clinic not found', 'danger')
-            return redirect(url_for('auth.track_application'))
-
-        admin = User.query.filter_by(email=admin_email).first()
-        admin_credential = ClinicCredential.query.filter_by(
-            user_id=admin.id,
-            clinic_id=clinic.id
-        ).first()
-
-        doctors = []
-        doctor_mappings = UserClinicMap.query.filter_by(
-            clinic_id=clinic.id,
-            role_at_clinic='doctor'
-        ).all()
-
-        for mapping in doctor_mappings:
-            doctor = User.query.get(mapping.user_id)
-            cred = ClinicCredential.query.filter_by(
-                user_id=doctor.id,
-                clinic_id=clinic.id
-            ).first()
-
-            doctors.append({
-                'name': doctor.username,
-                'email': doctor.email,
-                'password': cred.temp_password if cred else '[not set]'
-            })
-
-        print(f"Found {len(doctor_mappings)} doctor mappings:")
-        for mapping in doctor_mappings:
-            print(f" - User {mapping.user_id} | Role: {mapping.role_at_clinic}")
-
-        print(f"ClinicCredentials for clinic {clinic.id}:")
-        creds = ClinicCredential.query.filter_by(clinic_id=clinic.id).all()
-        for c in creds:
-            print(f" - User {c.user_id} | Temp: {c.temp_password} | Valid: {c.is_valid}")
-
-        return render_template('registration/track_status.html',
-                            application=registration,
-                            status='approved',
-                            admin_credential=admin_credential,
-                            doctors=doctors,
-                            clinic=clinic)
+        return show_clinic_credentials(clinic, registration)
 
     return render_template('registration/track_application.html')
 
+def show_clinic_credentials(clinic, admin_source):
+    """Helper function to show credentials for both new and existing clinics"""
+    # Handle both User object and ClinicRegistration object
+    admin_email = admin_source.email if hasattr(admin_source, 'email') else admin_source.admin_email
+    admin = User.query.filter_by(email=admin_email).first()
+    
+    if not admin:
+        flash('Admin account not found', 'danger')
+        return redirect(url_for('auth.track_application'))
+
+    # Get ALL doctors associated with the clinic
+    doctor_mappings = UserClinicMap.query.filter_by(
+        clinic_id=clinic.id,
+        role_at_clinic='doctor'
+    ).all()
+
+    doctors = []
+    for mapping in doctor_mappings:
+        doctor = User.query.get(mapping.user_id)
+        cred = ClinicCredential.query.filter_by(
+            user_id=doctor.id,
+            clinic_id=clinic.id
+        ).first()
+
+        doctors.append({
+            'name': doctor.name,
+            'email': doctor.email,
+            'password': cred.temp_password if cred and cred.is_valid else 'Already activated'
+        })
+
+    # Get admin credentials
+    admin_credential = ClinicCredential.query.filter_by(
+        user_id=admin.id,
+        clinic_id=clinic.id
+    ).first()
+
+    return render_template('registration/track_status.html',
+                        application=None,
+                        status='approved',
+                        admin_credential=admin_credential,
+                        doctors=doctors,
+                        clinic=clinic)
 
 # -------------------- Helper Functions --------------------
 

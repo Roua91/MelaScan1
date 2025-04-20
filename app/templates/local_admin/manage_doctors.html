@@ -1,0 +1,22 @@
+<!-- templates/local_admin/manage_doctors.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Manage Doctors</title>
+</head>
+<body>
+    <h1>Clinic Doctors</h1>
+    
+    <ul>
+        {% for doctor in doctors %}
+        <li>
+            {{ doctor.name }} ({{ doctor.email }})
+            <a href="#">Remove</a>
+        </li>
+        {% endfor %}
+    </ul>
+    
+    <a href="{{ url_for('local_admin.add_doctor') }}">Add New Doctor</a>
+    <a href="{{ url_for('local_admin.dashboard') }}">Back to Dashboard</a>
+</body>
+</html>

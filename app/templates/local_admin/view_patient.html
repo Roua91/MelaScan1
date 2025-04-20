@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ patient.name }} - Patient Record</title>
+</head>
+<body>
+    <header>
+        <nav>
+            <a href="{{ url_for('home.home') }}">Home</a> |
+            <a href="{{ url_for('local_admin.dashboard') }}">Dashboard</a> |
+            <a href="{{ url_for('local_admin.manage_patients') }}">All Patients</a> |
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </nav>
+    </header>
+
+    <!DOCTYPE html>
+
+
+    <h1>Patient Details</h1>
+    
+    <h2>{{ patient.name }}</h2>
+    <p><strong>Phone:</strong> {{ patient.contact_number }}</p>
+    <p><strong>Date of Birth:</strong> {{ patient.date_of_birth.strftime('%Y-%m-%d') }}</p>
+    
+    <h3>Reports</h3>
+    {% if reports %}
+        <ul>
+        {% for report in reports %}
+            <li>
+                Report #{{ report.id }} - {{ report.generated_on.strftime('%Y-%m-%d') }}
+                <a href="{{ url_for('local_admin.download_report', report_id=report.id) }}">Download</a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>No reports found for this patient.</p>
+    {% endif %}
+        
+    <div>
+        <a href="{{ url_for('local_admin.manage_patients') }}">Back to Patients</a>
+    </div>
+</body>
+</html>

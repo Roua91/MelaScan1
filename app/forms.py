@@ -12,10 +12,18 @@ from wtforms import (
 )
 from wtforms.validators import DataRequired, Email, Length, ValidationError
 from app.models import Clinic, User
-
+from wtforms import validators
+from datetime import datetime
 class DoctorForm(FlaskForm):
-    name = StringField('Doctor Name', validators=[DataRequired()])
-    email = StringField('Doctor Email', validators=[DataRequired(), Email()])
+    name = StringField('Full Name', validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+
+
+class PatientForm(FlaskForm):
+    name = StringField('Full Name', validators=[DataRequired()])
+    phone = StringField('Phone Number', validators=[DataRequired()])
+    # Using StringField for date to simplify handling
+    dob = StringField('Date of Birth (YYYY-MM-DD)', validators=[DataRequired()])
 
 class ClinicRegistrationForm(FlaskForm):
     # Clinic Information
@@ -43,11 +51,3 @@ class LoginForm(FlaskForm):
     email = StringField('Email', validators=[DataRequired(), Email()])
     password = PasswordField('Password', validators=[DataRequired()])
 
-class AddDoctorForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    password = PasswordField('Temporary Password', validators=[DataRequired()])
-
-class AddPatientForm(FlaskForm):
-    name = StringField('Full Name', validators=[DataRequired()])
-    contact_number = StringField('Phone', validators=[DataRequired()])
-    date_of_birth = DateField('Date of Birth', validators=[DataRequired()])

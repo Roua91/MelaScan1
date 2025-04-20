@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Report - {{ report.patient.name }}</title>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('doctor.view_patient', patient_id=report.patient.id) }}">Back to Patient</a>
+    </nav>
+
+    <h1>Medical Report</h1>
+    
+    <div>
+        <strong>Patient:</strong> {{ report.patient.name }}
+    </div>
+    
+    <div>
+        <strong>Date:</strong> {{ report.generated_on.strftime('%Y-%m-%d') }}
+    </div>
+    
+    <div>
+        <h2>Findings</h2>
+        <p>{{ report.findings }}</p>
+    </div>
+    
+    <div>
+        <h2>Diagnosis</h2>
+        <p>{{ report.diagnosis }}</p>
+    </div>
+    
+    <div>
+        <h2>Recommendations</h2>
+        <p>{{ report.recommendations }}</p>
+    </div>
+    
+    <div>
+        <h2>Images</h2>
+        {% for image in report.images %}
+        <div>
+            <img src="{{ url_for('static', filename='uploads/' + str(report.patient_id) + '/' + image.filename) }}" width="300">
+            {% if image.analysis %}
+                <p>Confidence: {{ (json.loads(image.analysis).get('confidence', 'N/A') }}</p>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <a href="{{ url_for('doctor.download_report', report_id=report.id) }}">Download PDF</a>
+</body>
+</html>

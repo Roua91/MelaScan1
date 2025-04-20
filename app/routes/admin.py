@@ -74,91 +74,85 @@ def process_registration(application_id):
     application = ClinicRegistration.query.get_or_404(application_id)
     doctors = json.loads(application.doctor_names) if application.doctor_names else []
 
-    if request.method == 'POST':
+    if request.method == 'POST' and request.form.get('action') == 'approve':
         try:
-            if request.form.get('action') == 'approve':
-                # Create Clinic
-                clinic = Clinic(
-                    name=application.clinic_name,
-                    address=application.clinic_address,
-                    contact_number=application.contact_number,
-                    license_number=application.license_number,
-                    status='active'
+            # Create Clinic
+            clinic = Clinic(
+                name=application.clinic_name,
+                address=application.clinic_address,
+                contact_number=application.contact_number,
+                license_number=application.license_number,
+                status='active'
+            )
+            db.session.add(clinic)
+            db.session.flush()
+
+            # Create Admin User (with name)
+            admin_temp_password = PasswordService.generate_permanent_password()
+            admin = User(
+                username=application.admin_email.split('@')[0],
+                email=application.admin_email,
+                name=application.admin_name,  # Set admin name
+                role='local_admin'
+            )
+            admin.set_password(admin_temp_password)
+            db.session.add(admin)
+            db.session.flush()
+
+            # Create Doctor Users (with names)
+            for doctor_info in doctors:
+                doctor_temp_password = PasswordService.generate_permanent_password()
+                doctor = User(
+                    username=doctor_info['email'].split('@')[0],
+                    email=doctor_info['email'],
+                    name=doctor_info['name'],  # Set doctor name
+                    role='doctor'
                 )
-                db.session.add(clinic)
+                doctor.set_password(doctor_temp_password)
+                db.session.add(doctor)
                 db.session.flush()
 
-                # Create Admin User
-                admin_temp_password = PasswordService.generate_permanent_password()
-                admin = User(
-                    username=application.admin_email.split('@')[0],
-                    email=application.admin_email,
-                    role='local_admin'
-                )
-                admin.set_password(admin_temp_password)
-                db.session.add(admin)
-                db.session.flush()
+                # Create mappings and credentials
+                db.session.add(UserClinicMap(
+                    user_id=doctor.id,
+                    clinic_id=clinic.id,
+                    role_at_clinic='doctor'
+                ))
 
                 db.session.add(ClinicCredential(
-                    user_id=admin.id,
+                    user_id=doctor.id,
                     clinic_id=clinic.id,
-                    temp_password=admin_temp_password,
+                    temp_password=doctor_temp_password,
                     is_valid=True
                 ))
 
-                # Create Doctor Users
-                for doctor_info in doctors:
-                    doctor_temp_password = PasswordService.generate_permanent_password()
-                    doctor = User(
-                        username=doctor_info['email'].split('@')[0],
-                        email=doctor_info['email'],
-                        role='doctor'
-                    )
-                    doctor.set_password(doctor_temp_password)
-                    db.session.add(doctor)
-                    db.session.flush()
+            # Admin-clinic mapping
+            db.session.add(UserClinicMap(
+                user_id=admin.id,
+                clinic_id=clinic.id,
+                role_at_clinic='admin'
+            ))
 
-                    db.session.add(UserClinicMap(
-                        user_id=doctor.id,
-                        clinic_id=clinic.id,
-                        role_at_clinic='doctor'
-                    ))
+            # Admin credentials
+            db.session.add(ClinicCredential(
+                user_id=admin.id,
+                clinic_id=clinic.id,
+                temp_password=admin_temp_password,
+                is_valid=True
+            ))
 
-                    db.session.add(ClinicCredential(
-                        user_id=doctor.id,
-                        clinic_id=clinic.id,
-                        temp_password=doctor_temp_password,
-                        is_valid=True
-                    ))
-
-                # Admin-clinic mapping
-                db.session.add(UserClinicMap(
-                    user_id=admin.id,
-                    clinic_id=clinic.id,
-                    role_at_clinic='admin'
-                ))
-
-                # Finalize approval
-                application.status = 'approved'
-                application.processed_at = datetime.utcnow()
-                application.processed_by = current_user.id
-                db.session.commit()
-
-                flash('Clinic approved successfully! Temporary credentials generated.', 'success')
-                return redirect(url_for('admin.dashboard'))
-
-            elif request.form.get('action') == 'reject':
-                application.status = 'rejected'
-                application.rejection_reason = request.form.get('rejection_reason')
-                db.session.commit()
-                flash('Application rejected', 'danger')
-                return redirect(url_for('admin.dashboard'))
+            # Finalize approval
+            application.status = 'approved'
+            application.processed_at = datetime.utcnow()
+            application.processed_by = current_user.id
+            
+            db.session.commit()
+            flash('Clinic approved successfully!', 'success')
+            return redirect(url_for('admin.dashboard'))
 
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Approval failed: {str(e)}", exc_info=True)
             flash(f'Approval failed: {str(e)}', 'danger')
-            return redirect(url_for('admin.process_registration', application_id=application_id))
 
     return render_template('admin/process_registration.html',
         application=application,

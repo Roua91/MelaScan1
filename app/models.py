@@ -10,9 +10,10 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
+    name = db.Column(db.String(150))  
     password_hash = db.Column(db.String(128), nullable=False)
     role = db.Column(db.String(20), nullable=False)
-
+    
     # Relationships
     clinic_assignments = db.relationship('UserClinicMap', back_populates='user')
     processed_registrations = db.relationship(
@@ -21,6 +22,8 @@ class User(db.Model, UserMixin):
         foreign_keys='ClinicRegistration.processed_by'
     )
     credentials = db.relationship('ClinicCredential', back_populates='user')
+    reports = db.relationship('Report', back_populates='doctor')
+    uploaded_images = db.relationship('Image', back_populates='uploader')
 
     @property
     def is_admin(self):
@@ -46,6 +49,13 @@ class Clinic(db.Model):
     staff_assignments = db.relationship('UserClinicMap', back_populates='clinic')
     patient_assignments = db.relationship('PatientClinicMap', back_populates='clinic')
     credentials = db.relationship('ClinicCredential', back_populates='clinic')
+    registrations = db.relationship('ClinicRegistration', back_populates='clinic')
+    
+    registrations = db.relationship(
+        'ClinicRegistration', 
+        back_populates='clinic',
+        foreign_keys='ClinicRegistration.clinic_id'  # Make this explicit
+    )
 
 class UserClinicMap(db.Model):
     __tablename__ = 'user_clinic_map'
@@ -66,6 +76,7 @@ class Patient(db.Model):
     name = db.Column(db.String(150), nullable=False)
     contact_number = db.Column(db.String(20), nullable=False)
     date_of_birth = db.Column(db.Date, nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)  
     
     # Relationships
     clinic_relationships = db.relationship('PatientClinicMap', back_populates='patient')
@@ -83,36 +94,55 @@ class PatientClinicMap(db.Model):
     clinic = db.relationship('Clinic', back_populates='patient_assignments')
     patient = db.relationship('Patient', back_populates='clinic_relationships')
 
+class Report(db.Model):
+    __tablename__ = 'reports'
+    id = db.Column(db.Integer, primary_key=True)
+    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    
+    # Report content
+    findings = db.Column(db.Text)
+    diagnosis = db.Column(db.Text)
+    recommendations = db.Column(db.Text)
+    
+    # PDF storage
+    pdf_path = db.Column(db.String(500))  
+    pdf_filename = db.Column(db.String(255)) 
+    
+    # Timestamps
+    generated_on = db.Column(db.DateTime, default=datetime.utcnow)
+    last_updated = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    
+    # Relationships
+    patient = db.relationship('Patient', back_populates='reports')
+    doctor = db.relationship('User', back_populates='reports')
+    
+    def generate_pdf(self):
+        """Generate PDF version of the report"""
+        from app.services.pdf_generator import generate_report_pdf
+        self.pdf_path, self.pdf_filename = generate_report_pdf(self)
+        return self.pdf_path
+
 class Image(db.Model):
     __tablename__ = 'images'
-
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
     filename = db.Column(db.String(255), nullable=False)
     file_path = db.Column(db.String(500), nullable=False)
+    uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     upload_date = db.Column(db.DateTime, default=datetime.utcnow)
+    analysis = db.Column(db.Text)
+    analysis_date = db.Column(db.DateTime)
     
     # Relationships
     patient = db.relationship('Patient', back_populates='images')
-    reports = db.relationship('Report', back_populates='image')
-
-class Report(db.Model):
-    __tablename__ = 'reports'
-
-    id = db.Column(db.Integer, primary_key=True)
-    patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
-    image_id = db.Column(db.Integer, db.ForeignKey('images.id'), nullable=False)
-    prediction_result = db.Column(db.String(50), nullable=False)
-    generated_on = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    patient = db.relationship('Patient', back_populates='reports')
-    image = db.relationship('Image', back_populates='reports')
+    uploader = db.relationship('User', back_populates='uploaded_images')
 
 class ClinicRegistration(db.Model):
     __tablename__ = 'clinic_registrations'
 
     id = db.Column(db.Integer, primary_key=True)
+    clinic_id = db.Column(db.Integer, db.ForeignKey('clinics.id'))
     clinic_name = db.Column(db.String(150), nullable=False)
     clinic_address = db.Column(db.String(250), nullable=False)
     contact_number = db.Column(db.String(20), nullable=False)
@@ -137,6 +167,13 @@ class ClinicRegistration(db.Model):
         back_populates='processed_registrations', 
         foreign_keys=[processed_by]
     )
+
+    clinic = db.relationship(
+        'Clinic', 
+        back_populates='registrations',
+        foreign_keys=[clinic_id]  
+    )
+    
     
     def set_doctor_passwords(self, doctor_passwords_dict):
         """Save doctor passwords as a JSON string."""

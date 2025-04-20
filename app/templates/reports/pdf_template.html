@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Medical Report - {{ report.patient.name }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .section { margin-bottom: 15px; }
+        .signature { margin-top: 50px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Medical Report</h1>
+        <p>Generated on: {{ report.generated_on.strftime('%Y-%m-%d %H:%M') }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Patient Information</h2>
+        <p><strong>Name:</strong> {{ report.patient.name }}</p>
+        <p><strong>Date of Birth:</strong> {{ report.patient.date_of_birth.strftime('%Y-%m-%d') }}</p>
+        <p><strong>Report ID:</strong> {{ report.id }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Doctor's Findings</h2>
+        <p>{{ report.findings or "No specific findings noted." }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Diagnosis</h2>
+        <p>{{ report.diagnosis or "No diagnosis provided." }}</p>
+    </div>
+
+    <div class="section">
+        <h2>Recommendations</h2>
+        <p>{{ report.recommendations or "No specific recommendations." }}</p>
+    </div>
+
+    <div class="signature">
+        <p>_________________________</p>
+        <p>Dr. {{ report.doctor.name }}</p>
+        <p>{{ report.generated_on.strftime('%Y-%m-%d') }}</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Report - {{ patient.name }}</title>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('doctor.view_patient', patient_id=patient.id) }}">Back to Patient</a>
+    </nav>
+
+    <h1>Create Report for {{ patient.name }}</h1>
+    
+    <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+            <label>Findings</label>
+            <textarea name="findings" required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Diagnosis</label>
+            <textarea name="diagnosis" required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Recommendations</label>
+            <textarea name="recommendations" required></textarea>
+        </div>
+        
+        <div class="form-group">
+            <label>Select AI Model</label>
+            <select name="ai_model">
+                <option value="model_a">Model</option>
+                <option value="model_b">Model B</option>
+                <option value="model_c">Model C</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Upload Images (Optional)</label>
+            <input type="file" name="images" id="imageInput" multiple accept="image/*">
+        </div>
+
+        <div class="form-group" id="imagePreviewContainer">
+            <h3>Uploaded Images:</h3>
+            <ul id="imageList"></ul>
+        </div>
+        
+        <button type="submit">Create Report</button>
+    </form>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const imageList = document.getElementById('imageList');
+
+        imageInput.addEventListener('change', function() {
+            imageList.innerHTML = '';
+            for (const file of this.files) {
+                const li = document.createElement('li');
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.width = 100;
+
+                    const analyzeBtn = document.createElement('button');
+                    analyzeBtn.type = 'button';
+                    analyzeBtn.textContent = 'Analyze';
+                    analyzeBtn.onclick = () => {
+                        alert('AI analysis will be triggered on backend after form submission.');
+                    };
+
+                    li.appendChild(img);
+                    li.appendChild(document.createTextNode(' ' + file.name + ' '));
+                    li.appendChild(analyzeBtn);
+                    imageList.appendChild(li);
+                };
+
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+</body>
+</html>

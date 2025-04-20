@@ -1,0 +1,25 @@
+<!-- templates/local_admin/patient_reports.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Reports for {{ patient.name }}</title>
+</head>
+<body>
+    <h1>Patient Reports: {{ patient.name }}</h1>
+    
+    {% if reports %}
+    <ul>
+        {% for report in reports %}
+        <li>
+            Report #{{ report.id }} - {{ report.generated_on.strftime('%Y-%m-%d') }}
+            <a href="{{ url_for('local_admin.download_report_pdf', report_id=report.id) }}">Download PDF</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>No reports available for this patient.</p>
+    {% endif %}
+    
+    <a href="{{ url_for('local_admin.view_patient', id=patient.id) }}">Back to Patient</a>
+</body>
+</html>

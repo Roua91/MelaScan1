@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>{{ patient.name }}</title>
+</head>
+<body>
+    <nav>
+        <a href="{{ url_for('doctor.dashboard') }}">Back to Dashboard</a>
+    </nav>
+
+    <h1>{{ patient.name }}</h1>
+    
+    <div>
+        <p><strong>Contact:</strong> {{ patient.contact_number }}</p>
+        <p><strong>Date of Birth:</strong> {{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else 'N/A' }}</p>
+    </div>
+    
+    <div>
+        <h2>Reports</h2>
+        <a href="{{ url_for('doctor.create_report', patient_id=patient.id) }}">Create New Report</a>
+        
+        {% if reports %}
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Diagnosis</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for report in reports %}
+                <tr>
+                    <td>{{ report.generated_on.strftime('%Y-%m-%d') }}</td>
+                    <td>{{ report.diagnosis or 'No diagnosis' }}</td>
+                    <td>
+                        <a href="{{ url_for('doctor.view_report', report_id=report.id) }}">View</a> |
+                        <a href="{{ url_for('doctor.download_report', report_id=report.id) }}">Download</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No reports found.</p>
+        {% endif %}
+    </div>
+</body>
+</html>
