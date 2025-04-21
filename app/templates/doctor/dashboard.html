@@ -12,7 +12,7 @@
     </header>
 
     <h1>Welcome, Dr. {{ current_user.name }}</h1>
-    
+
     <section>
         <h2>Search Patients</h2>
         <form method="GET" action="{{ url_for('doctor.dashboard') }}">
@@ -21,11 +21,11 @@
             <a href="{{ url_for('doctor.dashboard') }}">Reset</a>
         </form>
     </section>
-    
+
     <section>
         <h2>Your Patients</h2>
         {% if patients %}
-        <table border="1">
+        <table>
             <thead>
                 <tr>
                     <th>Name</th>

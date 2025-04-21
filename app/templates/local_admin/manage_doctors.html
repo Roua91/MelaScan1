@@ -1,12 +1,20 @@
-<!-- templates/local_admin/manage_doctors.html -->
 <!DOCTYPE html>
 <html>
 <head>
     <title>Manage Doctors</title>
 </head>
 <body>
+    <header>
+        <nav>
+            <a href="{{ url_for('home.home') }}">Home</a> |
+            <a href="{{ url_for('local_admin.dashboard') }}">Dashboard</a> |
+            <a href="{{ url_for('local_admin.manage_doctors') }}">Doctors</a> |
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </nav>
+    </header>
+
     <h1>Clinic Doctors</h1>
-    
+
     <ul>
         {% for doctor in doctors %}
         <li>
@@ -15,7 +23,7 @@
         </li>
         {% endfor %}
     </ul>
-    
+
     <a href="{{ url_for('local_admin.add_doctor') }}">Add New Doctor</a>
     <a href="{{ url_for('local_admin.dashboard') }}">Back to Dashboard</a>
 </body>

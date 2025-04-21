@@ -14,26 +14,26 @@
     </header>
 
     <main>
-        <section class="stats">
-            <div class="stat-card">
+        <section>
+            <div>
                 <h3>Total Clinics</h3>
                 <p>{{ total_clinics }}</p>
             </div>
-            <div class="stat-card">
+            <div>
                 <h3>Pending Applications</h3>
                 <p>{{ pending_applications }}</p>
             </div>
-            <div class="stat-card">
+            <div>
                 <h3>Approved Clinics</h3>
                 <p>{{ approved_clinics }}</p>
             </div>
-            <div class="stat-card">
+            <div>
                 <h3>Rejected Applications</h3>
                 <p>{{ rejected_applications }}</p>
             </div>
         </section>
 
-        <section class="recent-applications">
+        <section>
             <h2>Recent Applications</h2>
             <table>
                 <thead>
@@ -50,10 +50,10 @@
                     <tr>
                         <td>{{ reg.id }}</td>
                         <td>{{ reg.clinic_name }}</td>
-                        <td class="status-{{ reg.status }}">{{ reg.status|title }}</td>
+                        <td>{{ reg.status|title }}</td>
                         <td>{{ reg.submitted_at.strftime('%Y-%m-%d') }}</td>
                         <td>
-                            <a href="{{ url_for('admin.process_registration', application_id=reg.id) }}" class="btn">Review</a>
+                            <a href="{{ url_for('admin.process_registration', application_id=reg.id) }}">Review</a>
                         </td>
                     </tr>
                     {% endfor %}

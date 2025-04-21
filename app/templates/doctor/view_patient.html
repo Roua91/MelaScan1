@@ -9,18 +9,18 @@
     </nav>
 
     <h1>{{ patient.name }}</h1>
-    
+
     <div>
         <p><strong>Contact:</strong> {{ patient.contact_number }}</p>
         <p><strong>Date of Birth:</strong> {{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else 'N/A' }}</p>
     </div>
-    
+
     <div>
         <h2>Reports</h2>
         <a href="{{ url_for('doctor.create_report', patient_id=patient.id) }}">Create New Report</a>
-        
+
         {% if reports %}
-        <table border="1">
+        <table>
             <thead>
                 <tr>
                     <th>Date</th>

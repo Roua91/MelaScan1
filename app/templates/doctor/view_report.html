@@ -9,30 +9,30 @@
     </nav>
 
     <h1>Medical Report</h1>
-    
+
     <div>
         <strong>Patient:</strong> {{ report.patient.name }}
     </div>
-    
+
     <div>
         <strong>Date:</strong> {{ report.generated_on.strftime('%Y-%m-%d') }}
     </div>
-    
+
     <div>
         <h2>Findings</h2>
         <p>{{ report.findings }}</p>
     </div>
-    
+
     <div>
         <h2>Diagnosis</h2>
         <p>{{ report.diagnosis }}</p>
     </div>
-    
+
     <div>
         <h2>Recommendations</h2>
         <p>{{ report.recommendations }}</p>
     </div>
-    
+
     <div>
         <h2>Images</h2>
         {% for image in report.images %}
@@ -44,7 +44,7 @@
         </div>
         {% endfor %}
     </div>
-    
+
     <a href="{{ url_for('doctor.download_report', report_id=report.id) }}">Download PDF</a>
 </body>
 </html>

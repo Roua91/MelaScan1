@@ -10,9 +10,9 @@
         <h1>Pending Clinic Registrations</h1>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flashes">
+                <div>
                     {% for category, message in messages %}
-                        <p class="{{ category }}">{{ message }}</p>
+                        <p>{{ message }}</p>
                     {% endfor %}
                 </div>
             {% endif %}
@@ -23,9 +23,9 @@
         <a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a>
     </nav>
 
-    <div class="container">
+    <div>
         {% for application in applications %}
-        <div class="application">
+        <div>
             <h3>{{ application.clinic_name }}</h3>
             <p>Submitted: {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
             <a href="{{ url_for('admin.process_registration', application_id=application.id) }}">

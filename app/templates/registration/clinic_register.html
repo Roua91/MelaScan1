@@ -15,12 +15,12 @@
         <a href="{{ url_for('auth.login') }}">Login</a>
     </nav>
 
-    <div class="container">
+    <div>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
-                <div class="flashes">
+                <div>
                     {% for category, message in messages %}
-                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                        <div>{{ message }}</div>
                     {% endfor %}
                 </div>
             {% endif %}
@@ -29,79 +29,76 @@
         <form method="POST" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-            <!-- Clinic Information Section -->
-            <section class="form-section">
+            <section>
                 <h2>Clinic Information</h2>
-                
-                <div class="form-group">
+
+                <div>
                     <label>{{ form.clinic_name.label }}</label>
                     {{ form.clinic_name() }}
                 </div>
-                
-                <div class="form-group">
+
+                <div>
                     <label>{{ form.clinic_address.label }}</label>
                     {{ form.clinic_address(rows=3) }}
                 </div>
-                
-                <div class="form-group">
+
+                <div>
                     <label>{{ form.contact_number.label }}</label>
                     {{ form.contact_number() }}
                 </div>
-                
-                <div class="form-group">
+
+                <div>
                     <label>{{ form.license_number.label }}</label>
                     {{ form.license_number() }}
                 </div>
-                
-                <div class="form-group">
+
+                <div>
                     <label>{{ form.license_document.label }}</label>
                     {{ form.license_document() }}
                     <small>Upload your clinic license</small>
                 </div>
             </section>
 
-            <!-- Admin Information Section -->
-            <section class="form-section">
+            <section>
                 <h2>Admin Information</h2>
-                
-                <div class="form-group">
+
+                <div>
                     <label>{{ form.admin_name.label }}</label>
                     {{ form.admin_name() }}
                     {% if form.admin_name.errors %}
-                        <div class="error">{{ form.admin_name.errors[0] }}</div>
+                        <div>{{ form.admin_name.errors[0] }}</div>
                     {% endif %}
                 </div>
-                
-                <div class="form-group">
+
+                <div>
                     <label>{{ form.admin_email.label }}</label>
                     {{ form.admin_email() }}
                 </div>
-                
-                <div class="form-group">
+
+                <div>
                     <label>{{ form.admin_phone.label }}</label>
                     {{ form.admin_phone() }}
                 </div>
             </section>
 
-            <!-- Doctors Section -->
-            <section class="form-section">
+            <section>
                 <h2>Doctors</h2>
                 <div id="doctors-container">
                     {% for doctor in form.doctors %}
-                    <div class="doctor-entry form-group">
+                    <div class="doctor-entry">
                         <h3>Doctor #{{ loop.index }}</h3>
-                        <div class="form-group">
+                        <div>
                             {{ doctor.form.name.label }}
                             {{ doctor.form.name() }}
                             {% if doctor.form.name.errors %}
-                                <div class="error">{{ doctor.form.name.errors[0] }}</div>
+                                <div>{{ doctor.form.name.errors[0] }}</div>
                             {% endif %}
                         </div>
-                        <div class="form-group">
+                        <div>
                             {{ doctor.form.email.label }}
                             {{ doctor.form.email() }}
                             {% if doctor.form.email.errors %}
-                                <div class="error">{{ doctor.form.email.errors[0] }}</div>
+                                <div>{{ doctor.form.email.errors[0] }}</div>
                             {% endif %}
                         </div>
                     </div>
@@ -110,8 +107,7 @@
                 <button type="button" id="add-doctor">Add Doctor</button>
             </section>
 
-            <!-- Submit Section -->
-            <div class="form-group">
+            <div>
                 {{ form.submit() }}
             </div>
         </form>
@@ -125,7 +121,7 @@
         document.getElementById('add-doctor').addEventListener('click', function() {
             const container = document.getElementById('doctors-container');
             const index = container.getElementsByClassName('doctor-entry').length;
-            
+
             fetch("{{ url_for('registration.add_doctor') }}", {
                 method: 'POST',
                 headers: {
