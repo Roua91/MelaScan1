@@ -2,6 +2,7 @@
 new_venv/
 .env
 *.env
+venv/
 
 
 # Ignore compiled Python files
