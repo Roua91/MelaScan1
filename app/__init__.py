@@ -89,7 +89,8 @@ def create_app():
     app.register_blueprint(admin_bp, url_prefix='/admin')
     app.register_blueprint(local_admin_bp, url_prefix='/local_admin')
     app.register_blueprint(doctor_bp, url_prefix='/doctor')
-
+    
+    print("Loaded DB from:", app.config['SQLALCHEMY_DATABASE_URI'])
 
 
     return app
