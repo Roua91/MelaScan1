@@ -6,7 +6,7 @@
 
 ```bash
 python -m venv venv
-\venv\Scripts\Activate
+.\venv\Scripts\Activate
 ```
 
 ---
