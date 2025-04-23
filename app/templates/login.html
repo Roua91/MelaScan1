@@ -4,7 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login | MelaScan</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
   </head>
+
   <body>
     <header>
       <h1>MelaScan Login</h1>
@@ -15,15 +18,16 @@
       <a href="{{ url_for('registration.clinic_registration') }}">Register</a>
     </nav>
 
-    <div>
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <div>
-        {% for category, message in messages %}
-        <p>{{ message }}</p>
-        {% endfor %}
-      </div>
-      {% endif %} {% endwith %}
+    <div class="form-container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="message-box">
+          {% for category, message in messages %}
+            <p>{{ message }}</p>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endwith %}
 
       <form method="POST">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />

@@ -1,0 +1,148 @@
+/* General Reset and Box Model */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  /* Body Styling */
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f9f5ff; /* Light lilac background */
+    color: #555;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  /* Header Styling */
+  header {
+    background-color: #9575cd; /* Soft lilac */
+    color: white;
+    padding: 15px 0;
+    width: 100%;
+    text-align: center;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+  
+  header h1 {
+    font-size: 2rem;
+    font-weight: 600;
+  }
+  
+  /* Navigation Styling */
+  nav {
+    margin-top: 20px;
+    margin-bottom: 30px;
+  }
+  
+  nav a {
+    text-decoration: none;
+    color: #9575cd; /* Matching soft lilac */
+    margin: 0 15px;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+  
+  nav a:hover {
+    color: #7e57c2; /* Slightly darker purple on hover */
+  }
+  
+  /* Form Wrapper */
+  .form-container {
+    background: white;
+    padding: 40px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  /* Form Title */
+  .form-container h2 {
+    text-align: center;
+    color: #9575cd; /* Soft lilac for title */
+    margin-bottom: 20px;
+    font-size: 1.5rem;
+  }
+  
+  /* Form Fields Container */
+  .form-container form {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* Label Styling */
+  .form-container label {
+    font-size: 1rem;
+    margin-bottom: 8px;
+    color: #333;
+    display: inline-block; /* Align labels properly */
+    width: 100%;
+  }
+  
+  /* Input Fields Styling */
+  .form-container input {
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 1rem;
+    margin-bottom: 15px;
+    background-color: #fafafa;
+    transition: all 0.3s ease;
+    width: 100%; /* Ensure input boxes fill the container */
+  }
+  
+  .form-container input:focus {
+    outline: none;
+    border-color: #9575cd; /* Soft lilac focus border */
+    background-color: #ffffff;
+  }
+  
+  /* Submit Button */
+  .form-container button {
+    padding: 14px;
+    background-color: #9575cd; /* Soft lilac button */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  .form-container button:hover {
+    background-color: #7e57c2; /* Darker purple on hover */
+  }
+  
+  /* Flash Message Box */
+  .message-box {
+    background-color: #f3e5f5; /* Light purple background for messages */
+    color: #8e24aa; /* Dark purple text */
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+    font-size: 1rem;
+  }
+  
+  .message-box p {
+    margin: 0;
+  }
+  
+  /* Footer Styling */
+  footer {
+    position: fixed;
+    bottom: 20px;
+    font-size: 0.9rem;
+    color: #777;
+    text-align: center;
+  }
+  
+  footer p {
+    margin: 0;
+  }
+  
