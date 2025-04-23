@@ -4,41 +4,44 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pending Registrations | MelaScan Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/pending_applications.css') }}">
 </head>
 <body>
-    <header>
-        <h1>Pending Clinic Registrations</h1>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div>
-                    {% for category, message in messages %}
-                        <p>{{ message }}</p>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endwith %}
-    </header>
+    <div class="page-container">
+        <header>
+            <h1>Pending Clinic Registrations</h1>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div>
+                        {% for category, message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+        </header>
 
-    <nav>
-        <a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a>
-    </nav>
+        <nav>
+            <a href="{{ url_for('admin.dashboard') }}">Admin Dashboard</a>
+        </nav>
 
-    <div>
-        {% for application in applications %}
-        <div>
-            <h3>{{ application.clinic_name }}</h3>
-            <p>Submitted: {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
-            <a href="{{ url_for('admin.process_registration', application_id=application.id) }}">
-                Review Application
-            </a>
-        </div>
-        {% else %}
-        <p>No pending applications</p>
-        {% endfor %}
+        <main>
+            {% for application in applications %}
+            <div class="app-card">
+                <h3>{{ application.clinic_name }}</h3>
+                <p>Submitted: {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
+                <a href="{{ url_for('admin.process_registration', application_id=application.id) }}">
+                    Review Application
+                </a>
+            </div>
+            {% else %}
+            <p class="empty-message">No pending applications</p>
+            {% endfor %}
+        </main>
+
+        <footer>
+            <p>&copy; 2024 MelaScan Admin</p>
+        </footer>
     </div>
-
-    <footer>
-        <p>&copy; 2024 MelaScan Admin</p>
-    </footer>
 </body>
 </html>
