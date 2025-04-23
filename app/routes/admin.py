@@ -154,10 +154,31 @@ def process_registration(application_id):
             db.session.rollback()
             flash(f'Approval failed: {str(e)}', 'danger')
 
-    return render_template('admin/process_registration.html',
-        application=application,
-        doctors=doctors
-    )
+    elif request.form.get('action') == 'reject':
+            try:
+                # Reject application
+                application.status = 'rejected'
+                application.processed_at = datetime.utcnow()
+                application.processed_by = current_user.id
+                rejection_reason = request.form.get('rejection_reason', '').strip()
+                if rejection_reason:
+                    application.rejection_reason = rejection_reason
+                db.session.commit()
+
+                # Optional: Send email notification
+                send_rejection_email(application.admin_email, application.clinic_name)
+
+                flash('Application rejected.', 'info')
+                return redirect(url_for('admin.dashboard'))
+
+            except Exception as e:
+                db.session.rollback()
+                flash(f'Rejection failed: {str(e)}', 'danger')
+
+    return render_template('admin/process_registration.html', application=application, doctors=doctors)
+
+
+
 
 
 # -------------------- Download License File --------------------
