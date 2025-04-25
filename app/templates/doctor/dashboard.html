@@ -22,8 +22,8 @@
         <!-- Search Patients Section (Now aligned below the greeting) -->
         <section class="search-bar-wrapper">
             <h3>Search Patients</h3>
-            <form class="search-form" method="GET">
-                <input type="text" name="search" placeholder="Enter patient name or number">
+            <form class="search-form" method="GET" action="{{ url_for('doctor.dashboard') }}">
+                <input type="text" name="q" value="{{ search_query }}" placeholder="Search by name or phone number">
                 <button type="submit">Search</button>
                 <a href="{{ url_for('doctor.dashboard') }}" class="reset-link">Reset</a>
             </form>
