@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Process Registration | MelaScan Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/review_application.css') }}">
 </head>
 <body>
     <header>
@@ -19,7 +20,11 @@
         <!-- Clinic Information Section -->
         <section>
             <h2>{{ application.clinic_name }}</h2>
-            <p><strong>Status:</strong> {{ application.status|title }}</p>
+            <p><strong>Status:</strong>
+                <span class="status-{{ application.status }}">
+                    {{ application.status|title }}
+                </span>
+            </p>
             <p><strong>Submitted:</strong> {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
             
             <h3>Clinic Details</h3>
