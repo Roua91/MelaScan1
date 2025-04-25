@@ -1,0 +1,198 @@
+/* General Reset & Base Styles */
+body {
+    margin: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f8;
+    color: #333;
+}
+
+/* Header Styling */
+header {
+    background-color: #917cc1; /* Deep purple */
+    color: white;
+    padding: 20px;
+    text-align: center;
+}
+
+header h1 {
+    margin-bottom: 10px;
+}
+
+/* Navigation Links */
+nav {
+    margin-top: 10px;
+}
+
+nav a {
+    color: white;
+    text-decoration: none;
+    margin: 0 15px;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+nav a:hover {
+    color: #1a174e; /* Gold on hover */
+    text-decoration: underline;
+}
+
+/* Main Layout */
+main {
+    padding: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* Add space between sections */
+}
+
+/* Flex container for the Welcome message and Search Patients */
+.welcome-search-container {
+    display: flex;
+    justify-content: space-between; /* Space out the items */
+    align-items: center; /* Vertically align */
+    gap: 20px; /* Space between the two items */
+}
+
+/* Welcome Section */
+h2 {
+    margin: 0;
+    font-size: 30px;  /* Larger font for the welcome message */
+    font-weight: bold;  /* Make the welcome message stand out */
+    color: #4a3a8c;  /* Darker shade of purple for distinction */
+}
+
+/* Search Section */
+.search-bar-wrapper {
+    display: flex;
+    align-items: center;  /* Vertically align the elements in the row */
+    gap: 10px;  /* Adjust the space between the elements */
+}
+
+/* Search Section Heading */
+.search-bar-wrapper h3 {
+    margin: 0;  /* Remove any margin */
+    color: #04010d;  /* Matching color to "Your Patients" */
+    font-size: 20px;  /* Slightly smaller font size */
+    font-weight: bold;  /* Same font weight */
+    text-align: left;  /* Align the text to the left */
+}
+
+
+/* Search Form */
+.search-form {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+/* Search Input Field */
+.search-form input[type="text"] {
+    padding: 10px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    flex-grow: 1; /* Allows it to grow and fill space */
+    width: 250px; /* Fixed width for better alignment */
+}
+
+/* Buttons - Search & Reset */
+.search-form button,
+.search-form .reset-link {
+    padding: 10px 20px;  /* Consistent padding for both buttons */
+    font-size: 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    display: inline-flex;  /* Flex for better alignment */
+    justify-content: center;  /* Horizontally center the content */
+    align-items: center;  /* Vertically align the content */
+    height: 45px;  /* Same height for both buttons */
+    text-align: center;
+    line-height: normal;  /* Normalize line-height */
+}
+
+/* Search Button Styling */
+.search-form button {
+    background-color: #917cc1;  /* Soft purple for the search button */
+    color: white;
+    border: none;  /* No border for a clean look */
+    transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+/* Hover effect for Search Button */
+.search-form button:hover {
+    background-color: #7a65a6;
+    transform: scale(1.05);
+}
+
+/* Reset Button Styling */
+.search-form .reset-link {
+    color: #333;
+    font-weight: bold;
+    text-decoration: underline;
+    transition: color 0.3s ease;
+    margin-left: -5px;  /* Reduce the space between the search and reset button */
+}
+
+/* Hover effect for Reset Button */
+.search-form .reset-link:hover {
+    color: #111;
+}
+
+
+/* Patients Table Section */
+
+/* Table Styling */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+table th, table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+table th {
+    background-color: #9b88c7;
+    color: white;
+}
+
+table tr:hover {
+    background-color: #f1f1f1;
+}
+
+table td a {
+    color: #9780cd;
+    font-weight: bold;
+    text-decoration: none;
+}
+
+table td a:hover {
+    color: #8e7cc3;
+    text-decoration: underline;
+}
+
+/* Footer */
+footer {
+    background-color: #ffffff;  /* Clean white for the base */
+    color: #4a4a4a;  /* Darker gray text for contrast */
+    text-align: center;
+    padding: 30px 20px;
+    font-size: 14px;
+    position: fixed;  /* Keep footer fixed at the bottom of the page */
+    bottom: 0;
+    width: 100%;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);  /* Slight shadow for depth */
+    margin-top: 30px;  /* Add margin-top to avoid overlap with content */
+}
+
+footer p {
+    margin: 0;
+    color: #7f64b4;  /* Soft lavender text for a pop of color */
+}

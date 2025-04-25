@@ -1,56 +1,68 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Doctor Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/doctor_dashboard.css') }}">
 </head>
 <body>
     <header>
+        <h1>Doctor Dashboard</h1>
         <nav>
             <a href="{{ url_for('doctor.dashboard') }}">Dashboard</a> |
             <a href="{{ url_for('auth.logout') }}">Logout</a>
         </nav>
     </header>
 
-    <h1>Welcome, Dr. {{ current_user.name }}</h1>
+    <main>
+        <!-- Welcome Message -->
+        <h2>Welcome, Dr. {{ current_user.name }}</h2>
 
-    <section>
-        <h2>Search Patients</h2>
-        <form method="GET" action="{{ url_for('doctor.dashboard') }}">
-            <input type="text" name="q" value="{{ search_query }}" placeholder="Search by name or phone...">
-            <button type="submit">Search</button>
-            <a href="{{ url_for('doctor.dashboard') }}">Reset</a>
-        </form>
-    </section>
+        <!-- Search Patients Section (Now aligned below the greeting) -->
+        <section class="search-bar-wrapper">
+            <h3>Search Patients</h3>
+            <form class="search-form" method="GET">
+                <input type="text" name="search" placeholder="Enter patient name or number">
+                <button type="submit">Search</button>
+                <a href="{{ url_for('doctor.dashboard') }}" class="reset-link">Reset</a>
+            </form>
+        </section>
 
-    <section>
-        <h2>Your Patients</h2>
-        {% if patients %}
-        <table>
-            <thead>
-                <tr>
-                    <th>Name</th>
-                    <th>Contact</th>
-                    <th>Date of Birth</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for patient in patients %}
-                <tr>
-                    <td>{{ patient.name }}</td>
-                    <td>{{ patient.contact_number }}</td>
-                    <td>{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else 'N/A' }}</td>
-                    <td>
-                        <a href="{{ url_for('doctor.view_patient', patient_id=patient.id) }}">View</a> |
-                        <a href="{{ url_for('doctor.create_report', patient_id=patient.id) }}">New Report</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% else %}
-        <p>No patients found.</p>
-        {% endif %}
-    </section>
+        <!-- Patients Table Section -->
+        <section>
+            {% if patients %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Contact</th>
+                        <th>Date of Birth</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for patient in patients %}
+                    <tr>
+                        <td>{{ patient.name }}</td>
+                        <td>{{ patient.contact_number }}</td>
+                        <td>{{ patient.date_of_birth.strftime('%Y-%m-%d') if patient.date_of_birth else 'N/A' }}</td>
+                        <td>
+                            <a href="{{ url_for('doctor.view_patient', patient_id=patient.id) }}">View</a> |
+                            <a href="{{ url_for('doctor.create_report', patient_id=patient.id) }}">New Report</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p>No patients found.</p>
+            {% endif %}
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 MelaScan</p>
+    </footer>
 </body>
 </html>
