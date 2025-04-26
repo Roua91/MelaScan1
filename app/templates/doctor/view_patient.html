@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>{{ patient.name }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/view_patient.css') }}">
 </head>
 <body>
     <nav>
@@ -45,5 +46,8 @@
         <p>No reports found.</p>
         {% endif %}
     </div>
+    <footer>
+        <p>&copy; 2024 MelaScan</p>
+    </footer>
 </body>
 </html>
