@@ -4,50 +4,209 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login | MelaScan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-purple: #7e57c2;
+            --light-purple: #d1c4e9;
+            --lighter-purple: #f3e5f5;
+            --dark-purple: #5e35b1;
+            --gradient-start: #f2e6ff;
+            --gradient-end: #e6ccff;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background: 
+                linear-gradient(rgba(242, 230, 255, 0.9), rgba(183, 161, 203, 0.56)),
+                url('{{ url_for("static", filename="images/skin2.jpg") }}') no-repeat center center fixed;
+            background-size: cover;
+        }
+        
+        .navbar {
+            background: rgba(224, 217, 235, 0.9);
+            border-radius: 0 0 8px 8px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .navbar-brand, .nav-link {
+            color: #000 !important;
+            font-weight: 500;
+        }
+        
+        .auth-container {
+            max-width: 450px;
+            width: 100%;
+            margin: 2rem auto;
+            flex: 1;
+        }
+        
+        .auth-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(8px);
+        }
+        
+        .auth-header {
+            background-color: var(--primary-purple);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        
+        .auth-body {
+            padding: 2rem;
+        }
+        
+        .form-control {
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            transition: all 0.3s;
+            background-color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .form-control:focus {
+            border-color: var(--light-purple);
+            box-shadow: 0 0 0 0.25rem rgba(126, 87, 194, 0.15);
+            background-color: white;
+        }
+        
+        .btn-auth {
+            background-color: var(--primary-purple);
+            border: none;
+            padding: 12px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .btn-auth:hover {
+            background-color: var(--dark-purple);
+            transform: translateY(-2px);
+        }
+        
+        .auth-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #6c757d;
+        }
+        
+        .auth-link {
+            color: var(--primary-purple);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .auth-link:hover {
+            text-decoration: underline;
+            color: var(--dark-purple);
+        }
+        
+        .message-box {
+            background-color: #f3e5f5;
+            color: #5e35b1;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            border-left: 4px solid #7e57c2;
+        }
+        
+        footer {
+            background: rgba(199, 189, 214, 0.9);
+            color: black;
+            text-align: center;
+            padding: 15px 0;
+            width: 100%;
+            margin-top: auto;
+            backdrop-filter: blur(5px);
+        }
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+        /* Animation for subtle movement */
+        @keyframes subtleMove {
+            0% { background-position: 50% 50%; }
+            50% { background-position: 51% 51%; }
+            100% { background-position: 50% 50%; }
+        }
+
+        body {
+            animation: subtleMove 30s infinite ease-in-out;
+        }
+    </style>
   </head>
 
   <body>
-    <header>
-      <h1>MelaScan Login</h1>
-    </header>
-
-    <nav>
-      <a href="{{ url_for('home.home') }}">Home</a>
-      <a href="{{ url_for('registration.clinic_registration') }}">Register</a>
+    <nav class="navbar navbar-expand-lg">
+      <div class="container">
+        <a class="navbar-brand" href="{{ url_for('home.home') }}">MelaScan</a>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('home.home') }}">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('registration.clinic_registration') }}">Register</a>
+            </li>
+          </ul>
+        </div>
+      </div>
     </nav>
 
-    <div class="form-container">
-      {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <div class="message-box">
-          {% for category, message in messages %}
-            <p>{{ message }}</p>
-          {% endfor %}
+    <div class="container py-5">
+      <div class="auth-container">
+        <div class="auth-card">
+          <div class="auth-header">
+            <h2>Clinic Portal Login</h2>
+          </div>
+          <div class="auth-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                <div class="message-box">
+                  {% for category, message in messages %}
+                    <p>{{ message }}</p>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            {% endwith %}
+
+            <form method="POST" action="{{ url_for('auth.login') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+              <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" class="form-control" id="email" name="email" required>
+              </div>
+
+              <div class="mb-4">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" class="form-control" id="password" name="password" required>
+              </div>
+
+              <button type="submit" class="btn btn-auth w-100 text-white">Login</button>
+            </form>
+
+            <div class="auth-footer">
+              <p class="mb-2">Don't have an account? <a href="{{ url_for('registration.clinic_registration') }}" class="auth-link">Register your clinic</a></p>
+              <p><a href="{{ url_for('auth.track_application') }}" class="auth-link">Check application status</a></p>
+            </div>
+          </div>
         </div>
-        {% endif %}
-      {% endwith %}
-
-      <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-
-        <div>
-          <label>Email</label>
-          <input type="email" name="email" required />
-        </div>
-
-        <div>
-          <label>Password</label>
-          <input type="password" name="password" required />
-        </div>
-
-        <button type="submit">Login</button>
-      </form>
+      </div>
     </div>
 
     <footer>
-      <p>&copy; 2024 MelaScan</p>
+      <p>&copy; 2024 MelaScan. All Rights Reserved.</p>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   </body>
 </html>
