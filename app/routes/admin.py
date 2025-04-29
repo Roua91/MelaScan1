@@ -72,7 +72,19 @@ def process_registration(application_id):
         abort(403)
     
     application = ClinicRegistration.query.get_or_404(application_id)
-    doctors = json.loads(application.doctor_names) if application.doctor_names else []
+    
+    #added from here to ensure dynamaic docotr listing
+    clinic = None
+    if application.status == 'approved':
+        clinic = Clinic.query.filter_by(name=application.clinic_name).first()
+    if clinic:
+        doctors = db.session.query(User).join(UserClinicMap).filter(
+        UserClinicMap.clinic_id == clinic.id,
+        User.role == 'doctor'
+    ).all()
+    else:
+        # If no clinic yet (pending/rejected), fall back to original doctor names submitted
+        doctors = json.loads(application.doctor_names) if application.doctor_names else []
 
     if request.method == 'POST' and request.form.get('action') == 'approve':
         try:
@@ -176,6 +188,7 @@ def process_registration(application_id):
                 flash(f'Rejection failed: {str(e)}', 'danger')
 
     return render_template('admin/process_registration.html', application=application, doctors=doctors)
+
 
 
 

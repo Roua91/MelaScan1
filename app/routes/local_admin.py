@@ -218,21 +218,18 @@ def add_doctor():
 @login_required
 def delete_doctor(doctor_id):
     clinic = get_admin_clinic()
-    
-    # Remove clinic association
-    mapping = UserClinicMap.query.filter_by(
-        clinic_id=clinic.id,
-        user_id=doctor_id
-    ).first_or_404()
+
+    # Delete all clinic associations for this doctor
+    UserClinicMap.query.filter_by(user_id=doctor_id).delete()
 
     # Invalidate credentials
-    ClinicCredential.query.filter_by(
-        user_id=doctor_id,
-        clinic_id=clinic.id
-    ).delete()
+    ClinicCredential.query.filter_by(user_id=doctor_id).delete()
 
-    db.session.delete(mapping)
+    # Delete doctor from User table
+    doctor = User.query.get_or_404(doctor_id)
+    db.session.delete(doctor)
+
     db.session.commit()
     
-    flash('Doctor removed from clinic', 'success')
+    flash('Doctor fully removed', 'success')
     return redirect(url_for('local_admin.manage_doctors'))
