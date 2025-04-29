@@ -51,14 +51,19 @@
         </section>
 
         <!-- Doctors Information Section -->
-        <section>
-            <h3>Doctors ({{ application.doctor_count }})</h3>
-            <ul>
-                {% for doctor in doctors %}
+<section>
+    <h3>Doctors ({{ application.doctor_count }})</h3>
+    <ul>
+        {% if doctors %}
+            {% for doctor in doctors %}
                 <li>{{ doctor.name }} - {{ doctor.email }}</li>
-                {% endfor %}
-            </ul>
-        </section>
+            {% endfor %}
+        {% else %}
+            <li>No doctors available</li>
+        {% endif %}
+    </ul>
+</section>
+
 
         <!-- Processing Section (only show for pending applications) -->
         {% if application.status == 'pending' %}

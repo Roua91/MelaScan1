@@ -1,0 +1,103 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9fb;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    background-color: #2c3e50;
+    padding: 10px 0;
+    text-align: center;
+    color: white;
+}
+
+header nav a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-weight: bold;
+}
+
+header nav a:hover {
+    background-color: #34495e;
+    border-radius: 5px;
+}
+
+/* Page Heading */
+h1 {
+    text-align: center;
+    margin-top: 20px;
+    color: #2c3e50;
+    font-size: 2em;
+}
+
+
+/* Doctor List */
+ul {
+    list-style-type: none;
+    padding: 0;
+    max-width: 700px;
+    margin: 20px auto;
+}
+
+ul li {
+    background: #fff;
+    margin-bottom: 12px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1em;
+}
+
+/* Remove link */
+ul li a {
+    background-color: #e74c3c;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    text-decoration: none;
+    font-size: 0.9em;
+}
+
+ul li a:hover {
+    background-color: #c0392b;
+}
+
+/* Add / Back Buttons */
+a[href*="add_doctor"], a[href*="dashboard"] {
+    display: inline-block;
+    background-color: #3498db;
+    color: white;
+    text-decoration: none;
+    margin: 20px 10px 0;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-weight: bold;
+}
+
+a[href*="add_doctor"]:hover, a[href*="dashboard"]:hover {
+    background-color: #2980b9;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    ul li {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

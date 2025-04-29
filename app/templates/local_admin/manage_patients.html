@@ -2,13 +2,13 @@
 <html>
 <head>
     <title>Manage Patients</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/manage_patients.css') }}">
+
 </head>
 <body>
     <header>
         <nav>
-            <a href="{{ url_for('home.home') }}">Home</a> |
             <a href="{{ url_for('local_admin.dashboard') }}">Dashboard</a> |
-            <a href="{{ url_for('local_admin.manage_patients') }}">Patients</a> |
             <a href="{{ url_for('auth.logout') }}">Logout</a>
         </nav>
     </header>

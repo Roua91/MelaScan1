@@ -1,0 +1,118 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body Styling */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f9f9fb;
+    color: #333;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    background-color: #2c3e50;
+    padding: 10px 0;
+    text-align: center;
+}
+
+header nav a {
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    margin: 0 10px;
+    font-weight: bold;
+}
+
+header nav a:hover {
+    background-color: #34495e;
+    border-radius: 5px;
+}
+
+/* Page Heading */
+h1 {
+    text-align: center;
+    margin: 30px 0;
+    color: #2c3e50;
+}
+
+/* Form Styling */
+form {
+    max-width: 600px;
+    background: #fff;
+    padding: 30px;
+    margin: 20px auto;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+form div {
+    margin-bottom: 20px;
+}
+
+form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+form input[type="text"],
+form input[type="email"],
+form input[type="password"],
+form select,
+form textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Button Styling */
+button[type="submit"] {
+    background-color: #e7e9ea;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button[type="submit"]:hover {
+    background-color: #2980b9;
+}
+
+a[href*="manage_doctors"] {
+    display: inline-block;
+    margin-left: 20px;
+    text-decoration: none;
+    padding: 12px 20px;
+    background-color: #95a5a6;
+    color: white;
+    border-radius: 5px;
+}
+
+a[href*="manage_doctors"]:hover {
+    background-color: #7f8c8d;
+}
+
+/* Flash messages */
+div > p {
+    background-color: #dff0d8;
+    color: #3c763d;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+}
+
+/* Error messages */
+div div p {
+    background-color: #f8d7da;
+    color: #721c24;
+    padding: 8px;
+    border-radius: 4px;
+}
