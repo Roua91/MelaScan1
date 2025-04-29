@@ -1,97 +1,191 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>MelaScan - AI-Powered Melanoma Detection</title>
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MelaScan - AI-Powered Melanoma Detection</title>
     
-        <!-- Link to External CSS -->
-        <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-        
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
-    </head>       
+    <!-- Link to External CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
     <style>
       body {
-        font-family: "Arial", sans-serif;
-        background: linear-gradient(to right, rgb(242, 228, 255), #f2e6ff);
-        color: #000; /* Changed text color to black */
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #e1e0f0;
+        color: #18222c;
+        line-height: 1.6;
       }
       .navbar {
-        background: rgb(224, 217, 235);
+        background: #57619c;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       }
       .navbar-brand,
       .nav-link {
-        color: #000 !important; /* Changed navbar text to black */
+        color: white !important;
+        font-weight: 500;
+      }
+      .nav-link:hover {
+        color: #e1e0f0 !important;
       }
       .hero {
         text-align: center;
-        padding: 100px 20px;
-        background: url("{{ url_for('static', filename='images/melanoma-homepage.jpg') }}")
-
-            center/cover,
-          linear-gradient(
-            to right,
-            rgba(221, 203, 247, 0.8),
-            rgba(230, 204, 255, 0.8)
-          );
-        color: #000; /* Changed hero text color to black */
+        padding: 120px 20px;
+        background: linear-gradient(rgba(24, 34, 44, 0.8), rgba(24, 34, 44, 0.63)),
+                    url("{{ url_for('static', filename='images/melanoma-homepage.jpg') }}") center/cover;
+        color: white;
         position: relative;
       }
       .hero h1 {
-        font-size: 3rem;
-        font-weight: bold;
+        font-size: 3.2rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        text-shadow: 1px 1px 3px rgba(0,0,0,0.3);
       }
       .hero p {
-        font-size: 1.2rem;
-        margin-bottom: 20px;
+        font-size: 1.3rem;
+        margin-bottom: 30px;
+        max-width: 700px;
+        margin-left: auto;
+        margin-right: auto;
       }
       .buttons a {
         margin: 10px;
-        padding: 12px 25px;
+        padding: 12px 30px;
         font-size: 1.1rem;
-        border-radius: 5px;
+        border-radius: 30px;
+        font-weight: 500;
+        transition: all 0.3s ease;
       }
       .btn-primary {
-        background-color:rgb(179, 149, 222);
+        background-color: #7fa8d4;
         border: none;
       }
       .btn-primary:hover {
-        background-color:rgb(167, 143, 192);
+        background-color: #6c96c4;
+        transform: translateY(-2px);
       }
       .btn-light {
-        color: #333;
-        border: 1px solid rgb(206, 194, 224);
+        background-color: white;
+        color: #57619c;
+        border: none;
       }
       .btn-light:hover {
-        background-color: rgb(200, 189, 218);
-        color: white;
+        background-color: #e1e0f0;
+        color: #57619c;
+        transform: translateY(-2px);
+      }
+      .btn-secondary {
+        background-color: #c370ca;
+        border: none;
+      }
+      .btn-secondary:hover {
+        background-color: #b15fb8;
+        transform: translateY(-2px);
       }
       .content-section {
         background: white;
-        padding: 40px;
+        padding: 50px;
         border-radius: 10px;
-        box-shadow: 0px 4px 8px rgba(7, 7, 7, 0.1);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+      }
+      .feature-icon {
+        font-size: 2.5rem;
+        color: #7fa8d4;
+        margin-bottom: 20px;
+      }
+      .benefits-section {
+        background-color: #f8f9fa;
+        padding: 60px 0;
+      }
+      .benefit-card {
+        background: white;
+        border-radius: 10px;
+        padding: 30px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        height: 100%;
+        transition: transform 0.3s ease;
+      }
+      .benefit-card:hover {
+        transform: translateY(-10px);
+      }
+      .benefit-icon {
+        font-size: 2rem;
+        color: #c370ca;
+        margin-bottom: 20px;
       }
       footer {
-        background: rgb(199, 189, 214);
-        color: black; /* Changed footer text to black */
+        background: #18222c;
+        color: white;
+        padding: 40px 0 20px;
+      }
+      .footer-links a {
+        color: #7fa8d4;
+        text-decoration: none;
+        margin: 0 15px;
+      }
+      .footer-links a:hover {
+        color: white;
+      }
+      .trust-badges {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin: 40px 0;
+      }
+      .trust-badge {
+        max-width: 120px;
+        opacity: 0.8;
+        transition: opacity 0.3s ease;
+      }
+      .trust-badge:hover {
+        opacity: 1;
+      }
+      .section-title {
+        color: #57619c;
+        font-weight: 700;
+        margin-bottom: 30px;
+        position: relative;
+      }
+      .section-title:after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 0;
+        width: 60px;
+        height: 3px;
+        background: #c370ca;
+      }
+      .how-it-works {
+        background: linear-gradient(135deg, #7fa8d4 0%, #c370ca 100%);
+        color: white;
+        padding: 60px 0;
+      }
+      .step-number {
+        display: inline-block;
+        width: 40px;
+        height: 40px;
+        background: white;
+        color: #57619c;
+        border-radius: 50%;
         text-align: center;
-        padding: 15px 0;
-        margin-top: 20px;
+        line-height: 40px;
+        font-weight: bold;
+        margin-bottom: 15px;
       }
     </style>
-  </head>
-  <body>
+</head>
+<body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg">
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
       <div class="container">
-        <a class="navbar-brand" href="#">MelaScan</a>
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-        >
+        <a class="navbar-brand d-flex align-items-center" href="#">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MelaScan Logo" style="height: 30px; margin-right: 10px;">
+          MelaScan
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
           <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
@@ -100,11 +194,7 @@
               <a class="nav-link" href="#about">About</a>
             </li>
             <li class="nav-item">
-              <a
-                class="nav-link"
-                href="{{ url_for('registration.clinic_registration') }}"
-                >Register</a
-              >
+              <a class="nav-link" href="{{ url_for('registration.clinic_registration') }}">Register</a>
             </li>
             <li class="nav-item">
               <a class="nav-link" href="{{ url_for('auth.login') }}">Login</a>
@@ -120,39 +210,139 @@
     <!-- Hero Section -->
     <section class="hero">
       <div class="container">
-        <h1>AI-Powered Melanoma Detection</h1>
-        <p>Accurate and reliable melanoma detection for certified clinics</p>
+        <h1>Melanoma Detection Powered by AI</h1>
+        <p>Trusted by dermatologists as second decision tool for reliable skin cancer screening with cutting-edge artificial intelligence</p>
         <div class="buttons">
-          <a
-            href="{{ url_for('registration.clinic_registration') }}"
-            class="btn btn-primary"
-            >Register Your Clinic</a
-          >
-          <a href="{{ url_for('auth.login') }}" class="btn btn-light">Login</a>
-          <a href="{{ url_for('auth.track_application') }}" class="btn btn-secondary">
-            Check Application Status
+          <a href="{{ url_for('registration.clinic_registration') }}" class="btn btn-primary">
+            <i class="fas fa-hospital me-2"></i>Register Your Clinic
           </a>
+          <a href="{{ url_for('auth.login') }}" class="btn btn-light">
+            <i class="fas fa-sign-in-alt me-2"></i>Login
+          </a>
+          <a href="{{ url_for('auth.track_application') }}" class="btn btn-secondary">
+            <i class="fas fa-search me-2"></i>Check Status
+          </a>
+        </div>
+        
+        <div class="trust-badges">
+          <img src="{{ url_for('static', filename='images/gdpr.png') }}" alt="GDPR Compliant" class="trust-badge">
         </div>
       </div>
     </section>
 
-    <!-- Main Content -->
+    <!-- About Section -->
     <div class="container my-5">
       <div class="row justify-content-center">
-        <div class="col-md-10 content-section">
-          <div class="row">
+        <div class="col-lg-10 content-section">
+          <div class="row align-items-center">
             <div class="col-md-6">
-              <h3 id="about">About MelaScan</h3>
+              <h3 id="about" class="section-title">About MelaScan</h3>
+              <p class="lead">
+                MelaScan is a clinically validated AI diagnostic assistant designed specifically for certified dermatological practices.
+              </p>
               <p>
-                MelaScan is a third-party AI-powered solution designed for
-                certified dermatological clinics. It helps dermatologists
-                analyze moles and provides reliable insights to aid in melanoma
-                detection.
+                Our advanced machine learning algorithms analyze dermoscopic images with precision comparable to board-certified dermatologists, providing reliable second opinions for melanoma detection.
+              </p>
+              <p>
+                MelaScan integrates seamlessly with your existing workflow, enhancing diagnostic confidence while maintaining the highest standards of patient privacy and data security.
               </p>
             </div>
             <div class="col-md-6">
-              <h3 id="documentation">Documentation</h3>
-              <p>Documentation will be available soon.</p>
+              <img src="{{ url_for('static', filename='images/dermat.jpg') }}" alt="Dermatologist using MelaScan" class="img-fluid rounded shadow">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <section class="benefits-section">
+      <div class="container">
+        <div class="row justify-content-center mb-5">
+          <div class="col-lg-8 text-center">
+            <h3 id="features" class="section-title text-center">Why Choose MelaScan?</h3>
+            <p class="lead">Advanced technology designed to support dermatologists in early melanoma detection</p>
+          </div>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4">
+            <div class="benefit-card">
+              <div class="benefit-icon">
+                <i class="fas fa-bolt"></i>
+              </div>
+              <h4>Rapid Analysis</h4>
+              <p>Get AI-powered insights in seconds, reducing wait times and enabling faster decision-making for your patients.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="benefit-card">
+              <div class="benefit-icon">
+                <i class="fas fa-chart-line"></i>
+              </div>
+              <h4>90% Accuracy</h4>
+              <p>Clinically validated algorithm with sensitivity and specificity comparable to expert dermatologists.</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="benefit-card">
+              <div class="benefit-icon">
+                <i class="fas fa-shield-alt"></i>
+              </div>
+              <h4>GDPR Compliant</h4>
+              <p>Enterprise-grade security and privacy protections for all patient data and images.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works">
+      <div class="container">
+        <div class="row justify-content-center mb-5">
+          <div class="col-lg-8 text-center">
+            <h3 class="section-title text-center" style="color: white;">How MelaScan Works</h3>
+            <p class="lead">Simple integration into your clinical workflow</p>
+          </div>
+        </div>
+        <div class="row g-4">
+          <div class="col-md-4 text-center">
+            <div class="step-number">1</div>
+            <h4>Upload Images</h4>
+            <p>Securely upload dermoscopic images through our encrypted portal.</p>
+          </div>
+          <div class="col-md-4 text-center">
+            <div class="step-number">2</div>
+            <h4>AI Analysis</h4>
+            <p>Our trained deep learning model evaluates the lesion.</p>
+          </div>
+          <div class="col-md-4 text-center">
+            <div class="step-number">3</div>
+            <h4>Get Results</h4>
+            <p>Receive a detailed report with probability scores.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <div class="container my-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-10 content-section">
+          <div class="row align-items-center">
+            <div class="col-md-6">
+              <img src="{{ url_for('static', filename='images/ai-analysis-screen.jpg') }}" alt="MelaScan analysis screen" class="img-fluid rounded shadow">
+            </div>
+            <div class="col-md-6">
+              <h3 id="documentation" class="section-title">Technical Documentation</h3>
+              <p>
+                Access our comprehensive technical documentation, clinical validation studies, and integration guides.
+              </p>
+              <div class="mt-4">
+                <a href="#" class="btn btn-primary me-3">
+                  <i class="fas fa-book me-2"></i>Read Documentation
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -161,9 +351,36 @@
 
     <!-- Footer -->
     <footer>
-      <p>&copy; 2024 MelaScan. All Rights Reserved.</p>
+      <div class="container">
+        <div class="row">
+          <div class="col-md-4 mb-4">
+            <h5><img src="{{ url_for('static', filename='images/logo.png') }}" alt="MelaScan Logo" style="height: 30px; margin-right: 10px;">MelaScan</h5>
+            <p>Advanced AI diagnostics for dermatology professionals.</p>
+          </div>
+          <div class="col-md-4 mb-4">
+            <h5>Quick Links</h5>
+            <div class="footer-links d-flex flex-wrap">
+              <a href="#about">About</a>
+              <a href="#features">Features</a>
+              <a href="{{ url_for('registration.clinic_registration') }}">Register</a>
+              <a href="{{ url_for('auth.login') }}">Login</a>
+              <a href="#documentation">Documentation</a>
+              <a href="#">Privacy Policy</a>
+            </div>
+          </div>
+          <div class="col-md-4 mb-4">
+            <h5>Contact Us</h5>
+            <p><i class="fas fa-envelope me-2"></i> support@melascan.com</p>
+            <p><i class="fas fa-phone me-2"></i> +6011347562732</p>
+          </div>
+        </div>
+        <hr style="background-color: #7fa8d4;">
+        <div class="text-center pt-3">
+          <p>&copy; 2024 MelaScan. All Rights Reserved.</p>
+        </div>
+      </div>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-  </body>
+</body>
 </html>
