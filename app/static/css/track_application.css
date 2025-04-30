@@ -1,0 +1,107 @@
+/* Global */
+body {
+    background-color: #f6f4fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    margin: 0;
+}
+
+/* Heading */
+h1 {
+    color: #6a0dad;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+/* Flash messages */
+.alert {
+    padding: 12px 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    width: 100%;
+    max-width: 500px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.alert-success {
+    background-color: #e0f8e9;
+    color: #2e7d32;
+}
+
+.alert-error {
+    background-color: #fcebea;
+    color: #d32f2f;
+}
+
+/* Form container */
+form {
+    background-color: #ffffff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 12px rgba(106, 13, 173, 0.1);
+    width: 100%;
+    max-width: 500px;
+}
+
+/* Form fields */
+form div {
+    margin-bottom: 20px;
+}
+
+form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #444;
+}
+
+form input[type="text"],
+form input[type="email"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    background-color: #fdfdff;
+}
+
+form input:focus {
+    border-color: #a67fc2;
+    outline: none;
+    box-shadow: 0 0 5px #a67fc280;
+}
+
+/* Submit button */
+button[type="submit"] {
+    background-color: #6a0dad;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button[type="submit"]:hover {
+    background-color: #4b0082;
+}
+body {
+    background: linear-gradient(to right, rgba(255,255,255,0.7), rgba(255,255,255,0.7)),
+    url("../images/register-clinic.jpg") no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px;
+    margin: 0;
+    overflow-x: hidden;
+}

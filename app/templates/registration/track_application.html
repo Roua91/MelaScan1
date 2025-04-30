@@ -1,31 +1,32 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Track Application</title>
-</head>
-<body>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/track_application.css') }}"
+    />
+  </head>
+  <body>
     <h1>Track Your Application</h1>
-    
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }}">{{ message }}</div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    
+
+    {% with messages = get_flashed_messages(with_categories=true) %} {% if
+    messages %} {% for category, message in messages %}
+    <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %} {% endif %} {% endwith %}
+
     <form method="POST">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <!-- Rest of your form fields -->
-        <div>
-            <label>License Number:</label>
-            <input type="text" name="license_number" required>
-        </div>
-        <div>
-            <label>Admin Email:</label>
-            <input type="email" name="admin_email" required>
-        </div>
-        <button type="submit">Track Application</button>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+      <!-- Rest of your form fields -->
+      <div>
+        <label>License Number:</label>
+        <input type="text" name="license_number" required />
+      </div>
+      <div>
+        <label>Admin Email:</label>
+        <input type="email" name="admin_email" required />
+      </div>
+      <button type="submit">Track Application</button>
     </form>
-</body>
+  </body>
 </html>
