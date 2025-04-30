@@ -45,7 +45,7 @@ body {
 
 /* Buttons */
 .btn-primary {
-    background-color: #6a0dad;
+    background-color: #9645cfb9;
     color: white;
     padding: 12px 28px;
     border: none;
@@ -57,12 +57,12 @@ body {
 }
 
 .btn-primary:hover {
-    background-color: #4b0082;
+    background-color: #803cb1;
     box-shadow: 0 2px 6px rgba(75, 0, 130, 0.3);
 }
 
 .btn-secondary {
-    background-color: #a67fc2;
+    background-color: #c79ce7;
     color: white;
     padding: 10px 22px;
     border: none;
