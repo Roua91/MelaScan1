@@ -1,77 +1,161 @@
 /* Clinic Registration Styling */
 
+/* Background */
+body {
+    background-color: #f6f4fa;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #333;
+}
+
 /* Section Cards */
 .form-section {
     background-color: #ffffff;
-    padding: 20px;
-    margin-bottom: 30px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+    padding: 25px;
+    margin-bottom: 35px;
+    border-radius: 10px;
+    border: 1px solid #e0ddee;
+    box-shadow: 0 2px 8px rgba(106, 13, 173, 0.05);
 }
 
 .form-section h2 {
     color: #6a0dad;
-    margin-bottom: 15px;
-    border-bottom: 2px solid #eee;
-    padding-bottom: 5px;
+    margin-bottom: 20px;
+    font-size: 20px;
+    border-bottom: 2px solid #e7dbf6;
+    padding-bottom: 8px;
 }
 
 /* Form Inputs */
 .form-input {
     width: 100%;
-    padding: 10px;
-    border: 1px solid #bbb;
-    border-radius: 5px;
-    margin-top: 5px;
-    margin-bottom: 15px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    margin-top: 6px;
+    margin-bottom: 18px;
+    font-size: 15px;
+    background-color: #fdfdff;
+}
+
+.form-input:focus {
+    border-color: #a67fc2;
+    outline: none;
+    box-shadow: 0 0 4px #a67fc299;
 }
 
 /* Buttons */
 .btn-primary {
     background-color: #6a0dad;
     color: white;
-    padding: 12px 25px;
+    padding: 12px 28px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 16px;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
+    font-weight: 600;
+    transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
     background-color: #4b0082;
+    box-shadow: 0 2px 6px rgba(75, 0, 130, 0.3);
 }
 
 .btn-secondary {
-    background-color: #9370db;
+    background-color: #a67fc2;
     color: white;
-    padding: 10px 20px;
+    padding: 10px 22px;
     border: none;
-    border-radius: 5px;
-    margin-top: 10px;
+    border-radius: 6px;
+    margin-top: 12px;
     cursor: pointer;
-    font-weight: bold;
-    transition: background-color 0.3s ease;
+    font-weight: 600;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .btn-secondary:hover {
-    background-color: #7a5fc0;
+    background-color: #8e63b7;
+    box-shadow: 0 2px 6px rgba(138, 101, 184, 0.3);
 }
 
 /* Error messages */
 .error {
-    color: #c0392b;
+    color: #d63031;
     font-size: 14px;
     margin-top: 5px;
 }
 
 /* Doctor Entry Block */
 .doctor-entry {
-    background-color: #f8f4fc;
-    padding: 15px;
+    background-color: #f2e9fb;
+    padding: 18px;
+    border-radius: 8px;
+    margin-bottom: 18px;
+    border-left: 5px solid #a67fc2;
+    box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+/* Center the form container */
+.form-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(106, 13, 173, 0.08);
+}
+
+/* Center the page body content */
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f6f4fa;
+    margin: 0;
+    padding: 0;
+}
+
+/* Ensure header, nav, and footer are centered and full width */
+.main-header, .main-nav, .main-footer {
+    width: 100%;
+    text-align: center;
+}
+/* Prevent overflow on body */
+body {
+    overflow-x: hidden;
+}
+
+/* Responsive fix for container */
+.form-container {
+    width: 100%;
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 30px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(106, 13, 173, 0.08);
+    box-sizing: border-box;
+}
+
+/* Ensure doctor-entry never overflows */
+.doctor-entry {
+    width: 100%;
+    box-sizing: border-box;
+}
+/* Navigation Buttons */
+.nav-btn {
+    display: inline-block;
+    background-color: #6a0dad;
+    color: white;
+    text-decoration: none;
+    padding: 10px 20px;
+    margin: 10px 10px 20px;
     border-radius: 6px;
-    margin-bottom: 15px;
-    border-left: 4px solid #a67fc2;
+    font-weight: bold;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-btn:hover {
+    background-color: #4b0082;
+    transform: scale(1.05);
 }
