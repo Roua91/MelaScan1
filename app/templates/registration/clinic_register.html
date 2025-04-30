@@ -1,141 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register Clinic | MelaScan</title>
-</head>
-<body>
-    <header>
-        <h1>MelaScan Clinic Registration</h1>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/register_clinic.css') }}"
+    />
+  </head>
+  <body>
+    <header class="main-header">
+      <h1>MelaScan Clinic Registration</h1>
     </header>
 
-    <nav>
-        <a href="{{ url_for('home.home') }}">Home</a>
-        <a href="{{ url_for('auth.login') }}">Login</a>
+    <nav class="main-nav">
+      <a href="{{ url_for('home.home') }}">Home</a>
+      <a href="{{ url_for('auth.login') }}">Login</a>
     </nav>
 
-    <div>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div>
-                    {% for category, message in messages %}
-                        <div>{{ message }}</div>
-                    {% endfor %}
-                </div>
+    <div class="form-container">
+      {% with messages = get_flashed_messages(with_categories=true) %} {% if
+      messages %}
+      <div class="flash-messages">
+        {% for category, message in messages %}
+        <div class="flash-message">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %} {% endwith %}
+
+      <form method="POST" enctype="multipart/form-data">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+
+        <!-- Clinic Info -->
+        <section class="form-section">
+          <h2>Clinic Information</h2>
+
+          <div>
+            <label>{{ form.clinic_name.label }}</label>
+            {{ form.clinic_name(class="form-input") }}
+          </div>
+
+          <div>
+            <label>{{ form.clinic_address.label }}</label>
+            {{ form.clinic_address(rows=3, class="form-input") }}
+          </div>
+
+          <div>
+            <label>{{ form.contact_number.label }}</label>
+            {{ form.contact_number(class="form-input") }}
+          </div>
+
+          <div>
+            <label>{{ form.license_number.label }}</label>
+            {{ form.license_number(class="form-input") }}
+          </div>
+
+          <div>
+            <label>{{ form.license_document.label }}</label>
+            {{ form.license_document(class="form-input") }}
+            <small>Upload your clinic license</small>
+          </div>
+        </section>
+
+        <!-- Admin Info -->
+        <section class="form-section">
+          <h2>Admin Information</h2>
+
+          <div>
+            <label>{{ form.admin_name.label }}</label>
+            {{ form.admin_name(class="form-input") }} {% if
+            form.admin_name.errors %}
+            <p class="error">{{ form.admin_name.errors[0] }}</p>
             {% endif %}
-        {% endwith %}
+          </div>
 
-        <form method="POST" enctype="multipart/form-data">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div>
+            <label>{{ form.admin_email.label }}</label>
+            {{ form.admin_email(class="form-input") }}
+          </div>
 
-            <section>
-                <h2>Clinic Information</h2>
+          <div>
+            <label>{{ form.admin_phone.label }}</label>
+            {{ form.admin_phone(class="form-input") }}
+          </div>
+        </section>
 
-                <div>
-                    <label>{{ form.clinic_name.label }}</label>
-                    {{ form.clinic_name() }}
-                </div>
+        <!-- Doctors -->
+        <section class="form-section">
+          <h2>Doctors</h2>
+          <div id="doctors-container">
+            {% for doctor in form.doctors %}
+            <div class="doctor-entry">
+              <h3>Doctor #{{ loop.index }}</h3>
 
-                <div>
-                    <label>{{ form.clinic_address.label }}</label>
-                    {{ form.clinic_address(rows=3) }}
-                </div>
+              <div>
+                <label>{{ doctor.form.name.label }}</label>
+                {{ doctor.form.name(class="form-input") }} {% if
+                doctor.form.name.errors %}
+                <p class="error">{{ doctor.form.name.errors[0] }}</p>
+                {% endif %}
+              </div>
 
-                <div>
-                    <label>{{ form.contact_number.label }}</label>
-                    {{ form.contact_number() }}
-                </div>
-
-                <div>
-                    <label>{{ form.license_number.label }}</label>
-                    {{ form.license_number() }}
-                </div>
-
-                <div>
-                    <label>{{ form.license_document.label }}</label>
-                    {{ form.license_document() }}
-                    <small>Upload your clinic license</small>
-                </div>
-            </section>
-
-            <section>
-                <h2>Admin Information</h2>
-
-                <div>
-                    <label>{{ form.admin_name.label }}</label>
-                    {{ form.admin_name() }}
-                    {% if form.admin_name.errors %}
-                        <div>{{ form.admin_name.errors[0] }}</div>
-                    {% endif %}
-                </div>
-
-                <div>
-                    <label>{{ form.admin_email.label }}</label>
-                    {{ form.admin_email() }}
-                </div>
-
-                <div>
-                    <label>{{ form.admin_phone.label }}</label>
-                    {{ form.admin_phone() }}
-                </div>
-            </section>
-
-            <section>
-                <h2>Doctors</h2>
-                <div id="doctors-container">
-                    {% for doctor in form.doctors %}
-                    <div class="doctor-entry">
-                        <h3>Doctor #{{ loop.index }}</h3>
-                        <div>
-                            {{ doctor.form.name.label }}
-                            {{ doctor.form.name() }}
-                            {% if doctor.form.name.errors %}
-                                <div>{{ doctor.form.name.errors[0] }}</div>
-                            {% endif %}
-                        </div>
-                        <div>
-                            {{ doctor.form.email.label }}
-                            {{ doctor.form.email() }}
-                            {% if doctor.form.email.errors %}
-                                <div>{{ doctor.form.email.errors[0] }}</div>
-                            {% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                <button type="button" id="add-doctor">Add Doctor</button>
-            </section>
-
-            <div>
-                {{ form.submit() }}
+              <div>
+                <label>{{ doctor.form.email.label }}</label>
+                {{ doctor.form.email(class="form-input") }} {% if
+                doctor.form.email.errors %}
+                <p class="error">{{ doctor.form.email.errors[0] }}</p>
+                {% endif %}
+              </div>
             </div>
-        </form>
+            {% endfor %}
+          </div>
+
+          <button type="button" id="add-doctor" class="btn-secondary">
+            Add Doctor
+          </button>
+        </section>
+
+        <div class="submit-wrapper">{{ form.submit(class="btn-primary") }}</div>
+      </form>
     </div>
 
-    <footer>
-        <p>&copy; 2024 MelaScan</p>
+    <footer class="main-footer">
+      <p>&copy; 2024 MelaScan</p>
     </footer>
 
     <script>
-        document.getElementById('add-doctor').addEventListener('click', function() {
-            const container = document.getElementById('doctors-container');
-            const index = container.getElementsByClassName('doctor-entry').length;
-
-            fetch("{{ url_for('registration.add_doctor') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRFToken': "{{ csrf_token() }}"
-                }
-            })
-            .then(response => response.text())
-            .then(html => {
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-                container.appendChild(tempDiv.firstChild);
+      document
+        .getElementById("add-doctor")
+        .addEventListener("click", function () {
+          const container = document.getElementById("doctors-container");
+          fetch("{{ url_for('registration.add_doctor') }}", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/x-www-form-urlencoded",
+              "X-CSRFToken": "{{ csrf_token() }}",
+            },
+          })
+            .then((response) => response.text())
+            .then((html) => {
+              const tempDiv = document.createElement("div");
+              tempDiv.innerHTML = html;
+              container.appendChild(tempDiv.firstChild);
             });
         });
     </script>
-</body>
+  </body>
 </html>

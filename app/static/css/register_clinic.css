@@ -1,0 +1,77 @@
+/* Clinic Registration Styling */
+
+/* Section Cards */
+.form-section {
+    background-color: #ffffff;
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+}
+
+.form-section h2 {
+    color: #6a0dad;
+    margin-bottom: 15px;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 5px;
+}
+
+/* Form Inputs */
+.form-input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #bbb;
+    border-radius: 5px;
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+/* Buttons */
+.btn-primary {
+    background-color: #6a0dad;
+    color: white;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+    background-color: #4b0082;
+}
+
+.btn-secondary {
+    background-color: #9370db;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: background-color 0.3s ease;
+}
+
+.btn-secondary:hover {
+    background-color: #7a5fc0;
+}
+
+/* Error messages */
+.error {
+    color: #c0392b;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* Doctor Entry Block */
+.doctor-entry {
+    background-color: #f8f4fc;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 15px;
+    border-left: 4px solid #a67fc2;
+}
