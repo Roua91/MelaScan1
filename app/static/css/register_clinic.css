@@ -87,11 +87,9 @@ body {
 
 /* Doctor Entry Block */
 .doctor-entry {
-    background-color: #f2e9fb;
     padding: 18px;
     border-radius: 8px;
     margin-bottom: 18px;
-    border-left: 5px solid #a67fc2;
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
 }
 /* Center the form container */
@@ -145,7 +143,7 @@ body {
 /* Navigation Buttons */
 .nav-btn {
     display: inline-block;
-    background-color: #6a0dad;
+    background-color: #7e25bdda;
     color: white;
     text-decoration: none;
     padding: 10px 20px;
