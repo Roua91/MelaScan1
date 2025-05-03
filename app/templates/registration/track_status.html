@@ -1,110 +1,385 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Application Status</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Status - MelaScan</title>
+    <!-- Link to External CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+    :root {
+      --color-primary: #57619c;
+      --color-secondary: #7fa8d4;
+      --color-accent: #c370ca;
+      --color-dark: #18222c;
+      --color-light: #e1e0f0;
+      --color-white: #ffffff;
+      --color-success: #28a745;
+      --color-warning: #ffc107;
+      --color-danger: #dc3545;
+
+      --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+      --radius-md: 10px;
+      --radius-round: 30px;
+
+      --space-xs: 10px;
+      --space-sm: 20px;
+      --space-md: 30px;
+      --space-lg: 40px;
+      --space-xl: 50px;
+
+      --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+      background-color: var(--color-light);
+      color: var(--color-dark);
+      font-family: var(--font-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      background: var(--color-primary);
+      box-shadow: var(--shadow-light);
+    }
+
+    .navbar-brand, .nav-link {
+      color: var(--color-white) !important;
+      font-weight: 500;
+    }
+
+    .nav-link:hover {
+      color: var(--color-light) !important;
+    }
+
+    .content-section {
+      background: var(--color-white);
+      padding: var(--space-xl);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      margin-bottom: var(--space-md);
+      flex: 1;
+    }
+
+    .status-card {
+      border-left: 5px solid;
+      padding: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .status-approved {
+      border-color: var(--color-success);
+      background-color: rgba(40, 167, 69, 0.1);
+    }
+
+    .status-pending {
+      border-color: var(--color-warning);
+      background-color: rgba(255, 193, 7, 0.1);
+    }
+
+    .status-rejected {
+      border-color: var(--color-danger);
+      background-color: rgba(220, 53, 69, 0.1);
+    }
+
+    .status-badge {
+      padding: 8px 15px;
+      border-radius: var(--radius-round);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.9rem;
+    }
+
+    .badge-approved {
+      background-color: var(--color-success);
+      color: white;
+    }
+
+    .badge-pending {
+      background-color: var(--color-warning);
+      color: var(--color-dark);
+    }
+
+    .badge-rejected {
+      background-color: var(--color-danger);
+      color: white;
+    }
+
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin: var(--space-lg) 0;
+    }
+
+    .progress-steps::before {
+      content: '';
+      position: absolute;
+      top: 20px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background-color: var(--color-light);
+      z-index: 1;
+    }
+
+    .progress-step {
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+
+    .step-number {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background-color: var(--color-light);
+      color: var(--color-dark);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto var(--space-xs);
+      font-weight: bold;
+    }
+
+    .step-active .step-number {
+      background-color: var(--color-primary);
+      color: white;
+    }
+
+    .step-complete .step-number {
+      background-color: var(--color-success);
+      color: white;
+    }
+
+    .step-label {
+      font-size: 0.9rem;
+      color: var(--color-dark);
+    }
+
+    .step-active .step-label {
+      font-weight: bold;
+      color: var(--color-primary);
+    }
+
+    .step-complete .step-label {
+      color: var(--color-success);
+    }
+
+    .credentials-box {
+      background-color: var(--color-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .doctor-card {
+      border: 1px solid var(--color-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm);
+      margin-bottom: var(--space-sm);
+    }
+
+    footer {
+      background: var(--color-dark);
+      color: var(--color-white);
+      padding: var(--space-sm) 0;
+      text-align: center;
+      margin-top: auto;
+    }
+
+    .btn-primary {
+      background-color: var(--color-secondary);
+      border: none;
+      border-radius: var(--radius-round);
+    }
+
+    .btn-primary:hover {
+      background-color: #6c96c4;
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background-color: var(--color-accent);
+      border: none;
+      border-radius: var(--radius-round);
+    }
+
+    .btn-secondary:hover {
+      background-color: #b15fb8;
+      transform: translateY(-2px);
+    }
+
+    h1, h2, h3, h4 {
+      color: var(--color-primary);
+    }
+
+    .security-notice {
+      border-left: 4px solid var(--color-warning);
+      padding-left: var(--space-sm);
+      margin-bottom: var(--space-md);
+    }
+    </style>
 </head>
 <body>
-    <header>
-        <nav>
-            <a href="{{ url_for('home.home') }}">Home</a> |
-            <a href="{{ url_for('auth.track_application') }}">Track Application</a>
-        </nav>
-    </header>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('home.home') }}">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MelaScan Logo" style="height: 30px; margin-right: 10px;">
+          MelaScan
+        </a>
+        <div class="navbar-nav ms-auto">
+          <a class="nav-link" href="{{ url_for('home.home') }}">Home</a>
+          <a class="nav-link" href="{{ url_for('auth.track_application') }}">Track Application</a>
+        </div>
+      </div>
+    </nav>
 
-    <h1>Application Status</h1>
+    <!-- Main Content -->
+    <main class="container my-5">
+      <div class="row justify-content-center">
+        <div class="col-lg-10 content-section">
+          <h1 class="mb-4">Application Status</h1>
+          
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>{{ application.clinic_name }}</h2>
+            <span class="status-badge badge-{{ status }}">{{ status|title }}</span>
+          </div>
 
-    <h2>{{ application.clinic_name }}</h2>
-    <p>Status: <strong>{{ status|title }}</strong></p>
+          {% if status == 'approved' %}
+          <div class="status-card status-approved">
+            <h3><i class="fas fa-check-circle me-2"></i>Application Approved</h3>
+            <p class="lead">Your clinic has been approved to use MelaScan.</p>
+          </div>
 
-    {% if status == 'approved' %}
-    <div>
-        <h3>Important Security Notice</h3>
-        <p>These credentials are temporary and will be invalidated after first use.</p>
-    </div>
+          <div class="security-notice">
+            <h4><i class="fas fa-shield-alt me-2"></i>Important Security Notice</h4>
+            <p>These credentials are temporary and will be invalidated after first use.</p>
+          </div>
 
-    <div>
-        <a href="{{ url_for('auth.login') }}">Login Now</a>
-    </div>
+          <div class="credentials-box">
+            <h4 class="mb-3">Admin Access</h4>
+            <div class="row">
+              <div class="col-md-6">
+                <p><strong>Email:</strong> {{ application.admin_email }}</p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Temporary Password:</strong> 
+                  {% if admin_credential.is_valid %}
+                  <span class="text-monospace">{{ admin_credential.temp_password }}</span>
+                  {% else %}
+                  <span class="text-muted">Already activated</span>
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+            <div class="text-center mt-3">
+              <a href="{{ url_for('auth.login') }}" class="btn btn-primary">
+                <i class="fas fa-sign-in-alt me-2"></i>Login Now
+              </a>
+            </div>
+          </div>
 
-    <h4>Admin Access:</h4>
-    <p>Email: {{ application.admin_email }}</p>
-    <p>Temporary Password: {{ admin_credential.temp_password if admin_credential.is_valid else 'Already activated' }}</p>
+          {% if doctors %}
+          <h4 class="mt-4 mb-3">Doctor Credentials</h4>
+          {% for doctor in doctors %}
+          <div class="doctor-card">
+            <div class="row">
+              <div class="col-md-4">
+                <p><strong>Name:</strong> {{ doctor.name }}</p>
+              </div>
+              <div class="col-md-4">
+                <p><strong>Email:</strong> {{ doctor.email }}</p>
+              </div>
+              <div class="col-md-4">
+                <p><strong>Password:</strong> 
+                  {% if doctor.password != '[not set]' %}
+                  <span class="text-monospace">{{ doctor.password }}</span>
+                  {% else %}
+                  <span class="text-muted">Not set</span>
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+          {% endif %}
 
-    {% if doctors %}
-    <h4>Doctors:</h4>
-    <ul>
-        {% for doctor in doctors %}
-        <li>
-            <strong>{{ doctor.name }}</strong><br>
-            Email: {{ doctor.email }}<br>
-            {% if doctor.password != '[not set]' %}
-            Temporary Password: <span>{{ doctor.password }}</span>
-            {% else %}
-            <span>Password not set</span>
+          {% elif status == 'rejected' %}
+          <div class="status-card status-rejected">
+            <h3><i class="fas fa-times-circle me-2"></i>Application Rejected</h3>
+            {% if rejection_reason %}
+            <p><strong>Reason:</strong> {{ rejection_reason }}</p>
             {% endif %}
-        </li>
-        {% endfor %}
-    </ul>
-    {% else %}
-    <p>No doctors registered for this clinic.</p>
-    {% endif %}
+            <p>We appreciate your interest in MelaScan and encourage you to address any issues and reapply.</p>
+          </div>
 
-    {% elif status == 'rejected' %}
-    <div>
-        <h3>Application Rejected</h3>
-        {% if rejection_reason %}
-        <p><strong>Reason:</strong> {{ rejection_reason }}</p>
-        {% endif %}
-    </div>
+          <div class="d-flex justify-content-center gap-3 mt-4">
+            <a href="{{ url_for('registration.clinic_registration') }}" class="btn btn-primary">
+              <i class="fas fa-edit me-2"></i>Submit New Application
+            </a>
+            <a href="mailto:support@melascan.com" class="btn btn-secondary">
+              <i class="fas fa-envelope me-2"></i>Contact Support
+            </a>
+          </div>
 
-    <div>
-        <a href="{{ url_for('registration.clinic_registration') }}">
-            Submit New Application
-        </a>
-        <a href="mailto:support@melascan.com">
-            Contact Support
-        </a>
-    </div>
+          {% else %}
+          <div class="status-card status-pending">
+            <h3><i class="fas fa-hourglass-half me-2"></i>Application Under Review</h3>
+            <p>Submitted on <strong>{{ application.submitted_at.strftime('%B %d, %Y') }}</strong></p>
+          </div>
 
-    {% else %}
-    <div>
-        <h3>⏳ Application Under Review</h3>
-        <p>Submitted on <strong>{{ application.submitted_at.strftime('%B %d, %Y') }}</strong></p>
-    </div>
+          <div class="progress-steps">
+            <div class="progress-step step-complete">
+              <div class="step-number">1</div>
+              <div class="step-label">Submitted</div>
+            </div>
+            <div class="progress-step step-active">
+              <div class="step-number">2</div>
+              <div class="step-label">Under Review</div>
+            </div>
+            <div class="progress-step">
+              <div class="step-number">3</div>
+              <div class="step-label">Approval</div>
+            </div>
+          </div>
 
-    <div>
-        <div>
-            <span>1</span>
-            <span>Submitted</span>
+          <div class="mt-4">
+            <h4>What to expect next:</h4>
+            <ul>
+              <li>Typical review time: <strong>1-2 business days</strong></li>
+              <li>You'll receive an email notification when your application is processed</li>
+              <li>Check back here for updates</li>
+            </ul>
+          </div>
+
+          <div class="d-flex justify-content-center gap-3 mt-4">
+            <a href="{{ url_for('auth.track_application') }}" class="btn btn-primary">
+              <i class="fas fa-sync-alt me-2"></i>Refresh Status
+            </a>
+            <a href="mailto:support@melascan.com" class="btn btn-secondary">
+              <i class="fas fa-envelope me-2"></i>Contact Support
+            </a>
+          </div>
+          {% endif %}
         </div>
-        <div>
-            <span>2</span>
-            <span>Under Review</span>
-        </div>
-        <div>
-            <span>3</span>
-            <span>Approval</span>
-        </div>
-    </div>
+      </div>
+    </main>
 
-    <h4>What to expect next:</h4>
-    <ul>
-        <li>Typical review time: <strong>1-2 business days</strong></li>
-        <li>Check back here for updates</li>
-    </ul>
-
-    <div>
-        <a href="{{ url_for('auth.track_application') }}">
-            Refresh Status
-        </a>
-        <a href="mailto:support@melascan.com">
-            Contact Support
-        </a>
-    </div>
-    {% endif %}
-
+    <!-- Footer -->
     <footer>
-        <p>&copy; MelaScan</p>
+      <div class="container">
+        <p>&copy; 2024 MelaScan. All Rights Reserved.</p>
+      </div>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

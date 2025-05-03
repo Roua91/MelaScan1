@@ -9,132 +9,184 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     
     <style>
+      :root {
+        --color-primary: #57619c;
+        --color-secondary: #7fa8d4;
+        --color-accent: #c370ca;
+        --color-dark: #18222c;
+        --color-light: #e1e0f0;
+        --color-error: #dc3545;
+        --color-success-bg: #d4edda;
+        --color-success-text: #155724;
+        --color-white: #ffffff;
+      
+        --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      
+        --radius-sm: 5px;
+        --radius-md: 6px;
+        --radius-lg: 8px;
+        --radius-xl: 10px;
+        --radius-round: 30px;
+      
+        --space-xs: 10px;
+        --space-sm: 15px;
+        --space-md: 20px;
+        --space-lg: 25px;
+        --space-xl: 30px;
+        --space-xxl: 50px;
+      
+        --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.05);
+        --shadow-navbar: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      
       body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background-color: #e1e0f0;
-        color: #18222c;
+        background-color: var(--color-light);
+        color: var(--color-dark);
+        font-family: var(--font-main);
         line-height: 1.6;
-        background: linear-gradient(rgba(24, 34, 44, 0.8), rgba(24, 34, 44, 0.7)),
-                    url("{{ url_for('static', filename='images/register-clinic.jpg') }}") center/cover;
       }
+      
       .navbar {
-        background: #57619c;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        background: var(--color-primary);
+        box-shadow: var(--shadow-navbar);
       }
+      
       .navbar-brand,
       .nav-link {
         color: white !important;
         font-weight: 500;
       }
+      
       .nav-link:hover {
-        color: #e1e0f0 !important;
+        color: var(--color-light) !important;
       }
+      
       .content-section {
         background: white;
-        padding: 50px;
-        border-radius: 10px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        margin-bottom: 30px;
+        padding: var(--space-xxl);
+        border-radius: var(--radius-xl);
+        box-shadow: var(--shadow-md);
+        margin-bottom: var(--space-xl);
       }
+      
       .section-title {
-        color: #57619c;
+        color: var(--color-primary);
         font-weight: 700;
-        margin-bottom: 30px;
+        margin-bottom: var(--space-xl);
         position: relative;
       }
-      .section-title:after {
+      
+      .section-title::after {
         content: '';
         position: absolute;
         bottom: -10px;
         left: 0;
         width: 60px;
         height: 3px;
-        background: #c370ca;
+        background: var(--color-accent);
       }
+      
       .form-section {
         background: white;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        margin-bottom: 25px;
+        padding: var(--space-xl);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-light);
+        margin-bottom: var(--space-lg);
         border: 1px solid #e0e0f0;
       }
+      
       .form-section h2 {
-        color: #57619c;
+        color: var(--color-primary);
         font-size: 1.5rem;
-        margin-bottom: 20px;
-        padding-bottom: 10px;
+        margin-bottom: var(--space-md);
+        padding-bottom: var(--space-sm);
         border-bottom: 2px solid #e7e0f6;
       }
+      
       .form-control {
-        padding: 12px;
-        border-radius: 6px;
-        margin-bottom: 20px;
+        padding: var(--space-md);
+        border-radius: var(--radius-md);
+        margin-bottom: var(--space-md);
         border: 1px solid #d0d0e0;
       }
+      
       .form-control:focus {
-        border-color: #7fa8d4;
+        border-color: var(--color-secondary);
         box-shadow: 0 0 0 0.25rem rgba(127, 168, 212, 0.25);
       }
+      
       .btn-primary {
-        background-color: #7fa8d4;
+        background-color: var(--color-secondary);
         border: none;
-        padding: 12px 30px;
-        border-radius: 30px;
+        padding: var(--space-sm) var(--space-xl);
+        border-radius: var(--radius-round);
         font-weight: 500;
       }
+      
       .btn-primary:hover {
         background-color: #6c96c4;
         transform: translateY(-2px);
       }
+      
       .btn-secondary {
-        background-color: #c370ca;
+        background-color: var(--color-accent);
         border: none;
-        padding: 10px 25px;
-        border-radius: 30px;
+        padding: var(--space-xs) var(--space-lg);
+        border-radius: var(--radius-round);
         font-weight: 500;
       }
+      
       .btn-secondary:hover {
         background-color: #b15fb8;
         transform: translateY(-2px);
       }
+      
       .error {
-        color: #dc3545;
+        color: var(--color-error);
         font-size: 0.875rem;
         margin-top: -15px;
-        margin-bottom: 15px;
+        margin-bottom: var(--space-md);
       }
+      
       .doctor-entry {
-        padding: 20px;
+        padding: var(--space-md);
         background: #f8f9fa;
-        border-radius: 8px;
-        margin-bottom: 20px;
+        border-radius: var(--radius-lg);
+        margin-bottom: var(--space-md);
         border: 1px solid #e0e0f0;
       }
+      
       footer {
-        background: #18222c;
-        color: white;
-        padding: 30px 0;
-        margin-top: 50px;
+        background: var(--color-dark);
+        color: var(--color-white);
+        padding: var(--space-sm) 0;
+        text-align: center;
+        margin-top: 40px;
       }
+      
       .flash-message {
-        padding: 15px;
-        margin-bottom: 20px;
-        border-radius: 5px;
-        background: #d4edda;
-        color: #155724;
+        background: var(--color-success-bg);
+        color: var(--color-success-text);
+        padding: var(--space-sm);
+        margin-bottom: var(--space-md);
+        border-radius: var(--radius-sm);
       }
+      
       .main-header {
-
+        background: linear-gradient(rgba(24, 34, 44, 0.8), rgba(24, 34, 44, 0.7)),
+                    url("{{ url_for('static', filename='images/register-clinic.jpg') }}") center/cover;
         color: white;
         padding: 80px 20px;
         text-align: center;
-        margin-bottom: 40px;
+        margin-bottom: var(--space-xl);
       }
+      
       .main-header h1 {
         font-size: 2.5rem;
         font-weight: 700;
       }
+      
     </style>
 </head>
 <body>
@@ -283,15 +335,7 @@
     <!-- Footer -->
     <footer>
       <div class="container">
-        <div class="row">
-          <div class="col-md-6">
-            <h5><img src="{{ url_for('static', filename='images/logo.png') }}" alt="MelaScan Logo" style="height: 30px; margin-right: 10px;">MelaScan</h5>
-            <p>Advanced AI diagnostics for dermatology professionals.</p>
-          </div>
-          <div class="col-md-6 text-md-end">
-            <p>&copy; 2024 MelaScan. All Rights Reserved.</p>
-          </div>
-        </div>
+        <p>&copy; 2024 MelaScan. All Rights Reserved.</p>
       </div>
     </footer>
 

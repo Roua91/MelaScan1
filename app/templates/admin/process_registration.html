@@ -4,112 +4,385 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Process Registration | MelaScan Admin</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/review_application.css') }}">
+    <!-- Link to External CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+    :root {
+      --color-primary: #57619c;
+      --color-secondary: #7fa8d4;
+      --color-accent: #c370ca;
+      --color-dark: #18222c;
+      --color-light: #e1e0f0;
+      --color-white: #ffffff;
+      --color-success: #28a745;
+      --color-warning: #ffc107;
+      --color-danger: #dc3545;
+      --color-info: #17a2b8;
+
+      --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+      --radius-md: 10px;
+      --radius-round: 30px;
+
+      --space-xs: 10px;
+      --space-sm: 20px;
+      --space-md: 30px;
+      --space-lg: 40px;
+      --space-xl: 50px;
+
+      --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+      background-color: var(--color-light);
+      color: var(--color-dark);
+      font-family: var(--font-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      background: var(--color-primary);
+      box-shadow: var(--shadow-light);
+      padding: var(--space-xs) 0;
+    }
+
+    .navbar-brand, .nav-link {
+      color: var(--color-white) !important;
+      font-weight: 500;
+    }
+
+    .nav-link:hover {
+      color: var(--color-light) !important;
+    }
+
+    .page-header {
+      background: linear-gradient(rgba(24, 34, 44, 0.8), rgba(24, 34, 44, 0.63));
+      color: var(--color-white);
+      padding: var(--space-lg) 0;
+      margin-bottom: var(--space-xl);
+    }
+
+    .content-section {
+      background: var(--color-white);
+      padding: var(--space-xl);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .info-card {
+      background: var(--color-white);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      padding: var(--space-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .status-badge {
+      padding: 5px 15px;
+      border-radius: var(--radius-round);
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-transform: capitalize;
+      display: inline-block;
+    }
+
+    .status-pending {
+      background-color: var(--color-warning);
+      color: var(--color-dark);
+    }
+
+    .status-approved {
+      background-color: var(--color-success);
+      color: white;
+    }
+
+    .status-rejected {
+      background-color: var(--color-danger);
+      color: white;
+    }
+
+    .btn-primary {
+      background-color: var(--color-secondary);
+      border: none;
+      border-radius: var(--radius-round);
+      padding: var(--space-xs) var(--space-lg);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #6c96c4;
+      transform: translateY(-2px);
+    }
+
+    .btn-success {
+      background-color: var(--color-success);
+      border: none;
+      border-radius: var(--radius-round);
+      padding: var(--space-xs) var(--space-lg);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-success:hover {
+      background-color: #218838;
+      transform: translateY(-2px);
+    }
+
+    .btn-danger {
+      background-color: var(--color-danger);
+      border: none;
+      border-radius: var(--radius-round);
+      padding: var(--space-xs) var(--space-lg);
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .btn-danger:hover {
+      background-color: #c82333;
+      transform: translateY(-2px);
+    }
+
+    .form-control {
+      border-radius: var(--radius-md);
+      padding: var(--space-xs) var(--space-sm);
+      border: 1px solid var(--color-light);
+    }
+
+    .form-control:focus {
+      border-color: var(--color-secondary);
+      box-shadow: 0 0 0 0.25rem rgba(127, 168, 212, 0.25);
+    }
+
+    .doctor-list {
+      list-style: none;
+      padding: 0;
+    }
+
+    .doctor-item {
+      background-color: var(--color-light);
+      border-radius: var(--radius-md);
+      padding: var(--space-sm);
+      margin-bottom: var(--space-xs);
+    }
+
+    .document-link {
+      color: var(--color-secondary);
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .document-link:hover {
+      color: var(--color-primary);
+      text-decoration: underline;
+    }
+
+    .section-title {
+      color: var(--color-primary);
+      font-weight: 700;
+      margin-bottom: var(--space-md);
+      position: relative;
+    }
+
+    .section-title:after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: var(--color-accent);
+    }
+
+    footer {
+      background: var(--color-dark);
+      color: var(--color-white);
+      padding: var(--space-sm) 0;
+      text-align: center;
+      margin-top: auto;
+    }
+
+    .action-buttons {
+      display: flex;
+      gap: var(--space-sm);
+      margin-top: var(--space-md);
+    }
+
+    .rejection-reason {
+      margin-top: var(--space-md);
+    }
+    </style>
 </head>
 <body>
-    <header>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('admin.dashboard') }}">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MelaScan Logo" style="height: 30px; margin-right: 10px;">
+          MelaScan Admin
+        </a>
+        <div class="navbar-nav ms-auto">
+          <a class="nav-link" href="{{ url_for('admin.dashboard') }}">
+            Dashboard
+          </a>
+          <a class="nav-link" href="{{ url_for('admin.view_registrations') }}">
+            Applications
+          </a>
+          <a class="nav-link" href="{{ url_for('auth.logout') }}">
+            Logout
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="container text-center">
         <h1>Review Clinic Registration</h1>
-        <nav>
-            <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('admin.view_registrations') }}">All Applications</a>
-            <a href="{{ url_for('auth.logout') }}">Logout</a>
-        </nav>
-    </header>
+      </div>
+    </div>
 
-    <main>
-        <!-- Clinic Information Section -->
-        <section>
-            <h2>{{ application.clinic_name }}</h2>
-            <p><strong>Status:</strong>
-                <span class="status-{{ application.status }}">
-                    {{ application.status|title }}
-                </span>
-            </p>
-            <p><strong>Submitted:</strong> {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
-            
-            <h3>Clinic Details</h3>
-            <p><strong>Address:</strong> {{ application.clinic_address }}</p>
-            <p><strong>Contact:</strong> {{ application.contact_number }}</p>
-            <p><strong>License Number:</strong> {{ application.license_number }}</p>
-            
-            {% if application.license_document %}
-            <p>
-                <strong>License Document:</strong>
-                <a href="{{ url_for('admin.download_file', filename=application.license_document.split('/')[-1]) }}" target="_blank">
-                    View Document
+    <!-- Main Content -->
+    <main class="container mb-5">
+      <div class="content-section">
+        <!-- Clinic Information -->
+        <div class="info-card">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="section-title">{{ application.clinic_name }}</h2>
+            <span class="status-badge status-{{ application.status }}">
+              {{ application.status|title }}
+            </span>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong><i class="fas fa-calendar-alt me-2"></i>Submitted:</strong> {{ application.submitted_at.strftime('%Y-%m-%d') }}</p>
+            </div>
+            {% if application.status != 'pending' %}
+            <div class="col-md-6">
+              <p><strong><i class="fas fa-calendar-check me-2"></i>Processed:</strong> {{ application.processed_at.strftime('%Y-%m-%d') }}</p>
+            </div>
+            {% endif %}
+          </div>
+
+          <h3 class="section-title mt-4">Clinic Details</h3>
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong><i class="fas fa-map-marker-alt me-2"></i>Address:</strong> {{ application.clinic_address }}</p>
+              <p><strong><i class="fas fa-phone me-2"></i>Contact:</strong> {{ application.contact_number }}</p>
+            </div>
+            <div class="col-md-6">
+              <p><strong><i class="fas fa-id-card me-2"></i>License Number:</strong> {{ application.license_number }}</p>
+              {% if application.license_document %}
+              <p>
+                <strong><i class="fas fa-file-alt me-2"></i>License Document:</strong>
+                <a href="{{ url_for('admin.download_file', filename=application.license_document.split('/')[-1]) }}" 
+                   target="_blank" class="document-link">
+                  <i class="fas fa-external-link-alt me-1"></i>View Document
                 </a>
-            </p>
+              </p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Information -->
+        <div class="info-card">
+          <h3 class="section-title">Admin Information</h3>
+          <div class="row">
+            <div class="col-md-4">
+              <p><strong><i class="fas fa-user me-2"></i>Name:</strong> {{ application.admin_name }}</p>
+            </div>
+            <div class="col-md-4">
+              <p><strong><i class="fas fa-envelope me-2"></i>Email:</strong> {{ application.admin_email }}</p>
+            </div>
+            <div class="col-md-4">
+              <p><strong><i class="fas fa-mobile-alt me-2"></i>Phone:</strong> {{ application.admin_phone }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Doctors Information -->
+        <div class="info-card">
+          <h3 class="section-title">Doctors ({{ application.doctor_count }})</h3>
+          <ul class="doctor-list">
+            {% if doctors %}
+              {% for doctor in doctors %}
+                <li class="doctor-item">
+                  <i class="fas fa-user-md me-2"></i>{{ doctor.name }} - {{ doctor.email }}
+                </li>
+              {% endfor %}
+            {% else %}
+              <li class="doctor-item text-muted">
+                <i class="fas fa-info-circle me-2"></i>No doctors registered
+              </li>
             {% endif %}
-        </section>
+          </ul>
+        </div>
 
-        <!-- Admin Information Section -->
-        <section>
-            <h3>Admin Information</h3>
-            <p><strong>Name:</strong> {{ application.admin_name }}</p>
-            <p><strong>Email:</strong> {{ application.admin_email }}</p>
-            <p><strong>Phone:</strong> {{ application.admin_phone }}</p>
-        </section>
-
-        <!-- Doctors Information Section -->
-<section>
-    <h3>Doctors ({{ application.doctor_count }})</h3>
-    <ul>
-        {% if doctors %}
-            {% for doctor in doctors %}
-                <li>{{ doctor.name }} - {{ doctor.email }}</li>
-            {% endfor %}
-        {% else %}
-            <li>No doctors available</li>
-        {% endif %}
-    </ul>
-</section>
-
-
-        <!-- Processing Section (only show for pending applications) -->
+        <!-- Processing Section -->
         {% if application.status == 'pending' %}
-        <section>
-            <h3>Process Application</h3>
-            <form method="POST" action="{{ url_for('admin.process_registration', application_id=application.id) }}">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="info-card">
+          <h3 class="section-title">Process Application</h3>
+          <form method="POST" action="{{ url_for('admin.process_registration', application_id=application.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
-                <div>
-                    <button type="submit" name="action" value="approve">Approve</button>
-                    <button type="submit" name="action" value="reject">Reject</button>
-                </div>
+            <div class="action-buttons">
+              <button type="submit" name="action" value="approve" class="btn btn-success">
+                <i class="fas fa-check-circle me-2"></i>Approve
+              </button>
+              <button type="submit" name="action" value="reject" class="btn btn-danger" id="rejectBtn">
+                <i class="fas fa-times-circle me-2"></i>Reject
+              </button>
+            </div>
             
-                <div>
-                    <label for="rejection_reason">Rejection Reason (if rejecting):</label>
-                    <textarea name="rejection_reason" id="rejection_reason" rows="4"></textarea>
-                </div>
-            </form>
-            
-        </section>
+            <div class="rejection-reason">
+              <label for="rejection_reason" class="form-label">Rejection Reason (if applicable):</label>
+              <textarea name="rejection_reason" id="rejection_reason" rows="4" 
+                        class="form-control" placeholder="Provide reason for rejection..."></textarea>
+            </div>
+          </form>
+        </div>
         {% endif %}
 
-        <!-- Status History Section -->
-        {% if application.status != 'pending' %}
-        <section>
-            <h3>Processing Details</h3>
-            <p><strong>Processed:</strong> {{ application.processed_at.strftime('%Y-%m-%d') }}</p>
-            {% if application.status == 'rejected' and application.rejection_reason %}
-            <p><strong>Rejection Reason:</strong> {{ application.rejection_reason }}</p>
-            {% endif %}
-        </section>
+        <!-- Status History -->
+        {% if application.status == 'rejected' and application.rejection_reason %}
+        <div class="info-card">
+          <h3 class="section-title">Processing Details</h3>
+          <div class="alert alert-danger">
+            <h4><i class="fas fa-exclamation-triangle me-2"></i>Rejection Reason</h4>
+            <p>{{ application.rejection_reason }}</p>
+          </div>
+        </div>
         {% endif %}
+      </div>
     </main>
 
+    <!-- Footer -->
     <footer>
+      <div class="container">
         <p>&copy; 2024 MelaScan Admin</p>
+      </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Basic confirmation for reject action
-        document.querySelector('button[value="reject"]')?.addEventListener('click', function(e) {
-            const reason = document.getElementById('rejection_reason').value;
-            if (!reason || !confirm('Are you sure you want to reject this application?')) {
-                e.preventDefault();
-            }
-        });
+      // Enhanced confirmation for reject action
+      document.getElementById('rejectBtn')?.addEventListener('click', function(e) {
+        const reason = document.getElementById('rejection_reason').value.trim();
+        if (!reason) {
+          alert('Please provide a rejection reason before submitting.');
+          e.preventDefault();
+        } else if (!confirm('Are you sure you want to reject this application?')) {
+          e.preventDefault();
+        }
+      });
     </script>
 </body>
 </html>
