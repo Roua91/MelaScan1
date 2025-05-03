@@ -61,7 +61,8 @@
     }
 
     .dashboard-header {
-      background: linear-gradient(rgba(24, 34, 44, 0.8), rgba(24, 34, 44, 0.63));
+    background: linear-gradient(rgba(24, 34, 44, 0.8), rgba(24, 34, 44, 0.7)),
+        url("{{ url_for('static', filename='images/mel_scan.jpg') }}") center/cover;
       color: var(--color-white);
       padding: var(--space-lg) 0;
       margin-bottom: var(--space-xl);
@@ -207,16 +208,16 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
       <div class="container">
-        <a class="navbar-brand d-flex align-items-center" href="#">
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('home.home') }}">
           <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MelaScan Logo" style="height: 30px; margin-right: 10px;">
-          MelaScan Admin
+          MelaScan
         </a>
         <div class="navbar-nav ms-auto">
           <a class="nav-link active" href="{{ url_for('admin.view_registrations') }}">
-            <i class="fas fa-clipboard-list me-1"></i> Applications
+            Applications
           </a>
           <a class="nav-link" href="{{ url_for('auth.logout') }}">
-            <i class="fas fa-sign-out-alt me-1"></i> Logout
+            Logout
           </a>
         </div>
       </div>
