@@ -2,7 +2,8 @@ from flask import Flask
 import os
 from dotenv import load_dotenv
 from flask_wtf.csrf import CSRFProtect
-from app.extensions import db, migrate, bcrypt, login_manager
+from app.extensions import db, migrate, bcrypt, login_manager, init_services
+from sqlalchemy import inspect
 
 # Load environment variables first
 load_dotenv()
@@ -10,45 +11,54 @@ load_dotenv()
 def create_app():
     app = Flask(__name__, template_folder='templates')
     
-    # Configure instance path - more robust handling
+    # Configure instance path
     basedir = os.path.abspath(os.path.dirname(__file__))
-    instance_path = os.path.join(basedir, '..', 'instance')
+    instance_path = os.path.abspath(os.path.join(basedir, '..', 'instance'))
     os.makedirs(instance_path, exist_ok=True)
     
     # Database configuration
     db_path = os.path.join(instance_path, 'mela_scan.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path.replace(os.sep, "/")}'
     
     # Complete configuration setup
     app.config.from_mapping(
         # Security
-        SECRET_KEY=os.getenv('SECRET_KEY', 'dev-fallback-key'),
-        CSRF_ENABLED=True,
-        
-        # Database
-        SQLALCHEMY_DATABASE_URI=f'sqlite:///{db_path}',
+        SECRET_KEY=os.getenv('SECRET_KEY'),
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         
         # File Uploads
         UPLOAD_FOLDERS={
-            'registration': os.path.join(instance_path, 'uploads/registration'),
-            'reports': os.path.join(instance_path, 'uploads/reports'),
-            'patient_images': os.path.join(instance_path, 'uploads/patient_images')
+            'registration': os.path.join(instance_path, os.getenv('UPLOAD_FOLDER_REGISTRATION')),
+            'reports': os.path.join(instance_path, os.getenv('UPLOAD_FOLDER_REPORTS')),
+            'patient_images': os.path.join(instance_path, 'uploads/patient_images'),
+            'temp_images': os.path.join(instance_path, 'uploads/temp')
         },
         MAX_CONTENT_LENGTH=5 * 1024 * 1024,  # 5MB
         ALLOWED_EXTENSIONS={'pdf', 'png', 'jpg', 'jpeg'},
         
-        # Session
-        PERMANENT_SESSION_LIFETIME=3600,  # 1 hour
-        SESSION_COOKIE_SECURE=False,  # True in production with HTTPS
-        SESSION_COOKIE_HTTPONLY=True,
+        # AI Model Configuration
+        RESNET_CBAM_PATH=os.path.join(basedir, os.getenv('RESNET_CBAM_PATH')),
+        EFFICIENTNET_PATH=os.path.join(basedir, os.getenv('EFFICIENTNET_PATH')),
+        DENSENET_PATH=os.path.join(basedir, os.getenv('DENSENET_PATH')),
+        RESNET_CBAM_CLASS=os.getenv('RESNET_CBAM_CLASS'),
         
-        # Flask-Login
-        LOGIN_DISABLED=False
+        # Admin credentials
+        ADMIN_EMAIL=os.getenv('ADMIN_EMAIL'),
+        ADMIN_PASSWORD=os.getenv('ADMIN_PASSWORD')
     )
     
+    # Debug output
+    print(f"Database will be created at: {db_path}")
+    print(f"SQLAlchemy URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    print(os.path.exists(os.path.join(basedir, 'modelai/resnet_cbam.pth')))
+
     # Create all needed directories
     for folder in app.config['UPLOAD_FOLDERS'].values():
         os.makedirs(folder, exist_ok=True)
+    
+    # Create models directory if it doesn't exist
+    models_dir = os.path.join(basedir, 'models')
+    os.makedirs(models_dir, exist_ok=True)
 
     # Initialize extensions
     db.init_app(app)
@@ -66,15 +76,34 @@ def create_app():
         from app.models import User
         return User.query.get(int(user_id))
     
-    # Import models after db initialization
+    # Initialize database
     with app.app_context():
+        # Ensure database file exists
+        if not os.path.exists(db_path):
+            open(db_path, 'w').close()
+            print(f"Created new database file at: {db_path}")
+        
+        # Import models
         from app.models import (
             User, Clinic, Patient, 
             Image, Report, 
             ClinicRegistration,
             UserClinicMap, PatientClinicMap
         )
-        db.create_all()  # Creates tables if they don't exist
+        
+        # Create all tables
+        db.create_all()
+        
+        # Verify creation
+        print(f"Database initialized at: {db_path}")
+        try:
+            tables = inspect(db.engine).get_table_names()
+            print(f"Tables created: {tables}")
+        except Exception as e:
+            print(f"Error checking tables: {str(e)}")
+    
+    # Initialize services (including AI models)
+    init_services(app)
     
     # Register blueprints
     from app.routes.home import home_bp
@@ -90,5 +119,4 @@ def create_app():
     app.register_blueprint(local_admin_bp, url_prefix='/local_admin')
     app.register_blueprint(doctor_bp, url_prefix='/doctor')
     
-
     return app

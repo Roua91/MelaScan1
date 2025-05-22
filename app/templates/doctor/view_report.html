@@ -1,50 +1,344 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Report - {{ report.patient.name }}</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Details | MelaScan</title>
+    <style>
+    :root {
+      --color-primary: #57619c;
+      --color-secondary: #7fa8d4;
+      --color-accent: #c370ca;
+      --color-dark: #18222c;
+      --color-light: #e1e0f0;
+      --color-white:rgb(251, 248, 248);
+
+      --font-main: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+      --radius-md: 10px;
+      --radius-round: 30px;
+
+      --space-xs: 10px;
+      --space-sm: 20px;
+      --space-md: 30px;
+      --space-lg: 40px;
+      --space-xl: 50px;
+
+      --shadow-light: 0 2px 10px rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 5px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+      background-color: var(--color-light);
+      color: var(--color-dark);
+      font-family: var(--font-main);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .navbar {
+      background: var(--color-primary);
+      box-shadow: var(--shadow-light);
+      padding: var(--space-xs) 0;
+    }
+
+    .navbar-brand, .nav-link {
+      color: var(--color-white) !important;
+      font-weight: 500;
+    }
+
+    .nav-link:hover {
+      color: var(--color-light) !important;
+    }
+
+    .dashboard-header {
+    background: linear-gradient(rgba(24, 34, 44, 0.8), rgba(24, 34, 44, 0.7)),
+        url("{{ url_for('static', filename='images/scanner.jpg') }}") center/cover;
+      color: var(--color-white);
+      padding: var(--space-lg) 0;
+      margin-bottom: var(--space-md);
+    }
+
+    .welcome-card {
+      background: var(--color-white);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      margin-bottom: var(--space-md);
+      text-align: center;
+    }
+
+    .search-card {
+      background: var(--color-white);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+      margin-bottom: var(--space-md);
+    }
+
+    .search-form {
+      display: flex;
+      gap: var(--space-xs);
+      align-items: center;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: var(--space-xs) var(--space-sm);
+      border: 1px solid var(--color-light);
+      border-radius: var(--radius-round);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--color-secondary);
+      box-shadow: 0 0 0 2px rgba(127, 168, 212, 0.25);
+    }
+
+    .btn {
+      padding: var(--space-xs) var(--space-md);
+      border-radius: var(--radius-round);
+      font-weight: 500;
+      transition: all 0.3s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-primary {
+      background-color: var(--color-secondary);
+      border: none;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #6c96c4;
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      background-color: transparent;
+      border: 1px solid var(--color-secondary);
+      color: var(--color-secondary);
+      text-decoration: none;
+    }
+
+    .btn-outline:hover {
+      background-color: var(--color-secondary);
+      color: white;
+    }
+
+    .patients-card {
+      background: var(--color-white);
+      padding: var(--space-md);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-md);
+    }
+
+    .table-responsive {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background-color: var(--color-primary);
+      color: var(--color-white);
+      padding: var(--space-sm);
+      text-align: left;
+    }
+
+    td {
+      padding: var(--space-sm);
+      border-bottom: 1px solid var(--color-light);
+    }
+
+    tr:hover {
+      background-color: rgba(126, 168, 212, 0.1);
+    }
+
+    .action-btns {
+      display: flex;
+      gap: var(--space-xs);
+    }
+
+    .action-btn {
+      padding: 6px 12px;
+      border-radius: var(--radius-md);
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: all 0.3s ease;
+    }
+
+    .view-btn {
+      background-color: var(--color-secondary);
+      color: white;
+      border: none;
+    }
+
+    .view-btn:hover {
+      background-color: #6c96c4;
+    }
+
+    .report-btn {
+      background-color: var(--color-accent);
+      color: white;
+      border: none;
+    }
+
+    .report-btn:hover {
+      background-color: #b15fb8;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: var(--space-xl) 0;
+      color: var(--color-dark);
+    }
+
+    .section-title {
+      color: var(--color-primary);
+      font-weight: 700;
+      margin-bottom: var(--space-md);
+      position: relative;
+    }
+
+    .section-title:after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      width: 60px;
+      height: 3px;
+      background: var(--color-accent);
+    }
+
+    footer {
+      background: var(--color-dark);
+      color: var(--color-white);
+      padding: var(--space-sm) 0;
+      text-align: center;
+      margin-top: auto;
+    }
+    </style>
 </head>
 <body>
-    <nav>
-        <a href="{{ url_for('doctor.view_patient', patient_id=report.patient.id) }}">Back to Patient</a>
-    </nav>
-
-    <h1>Medical Report</h1>
-
-    <div>
-        <strong>Patient:</strong> {{ report.patient.name }}
-    </div>
-
-    <div>
-        <strong>Date:</strong> {{ report.generated_on.strftime('%Y-%m-%d') }}
-    </div>
-
-    <div>
-        <h2>Findings</h2>
-        <p>{{ report.findings }}</p>
-    </div>
-
-    <div>
-        <h2>Diagnosis</h2>
-        <p>{{ report.diagnosis }}</p>
-    </div>
-
-    <div>
-        <h2>Recommendations</h2>
-        <p>{{ report.recommendations }}</p>
-    </div>
-
-    <div>
-        <h2>Images</h2>
-        {% for image in report.images %}
-        <div>
-            <img src="{{ url_for('static', filename='uploads/' + str(report.patient_id) + '/' + image.filename) }}" width="300">
-            {% if image.analysis %}
-                <p>Confidence: {{ (json.loads(image.analysis).get('confidence', 'N/A') }}</p>
-            {% endif %}
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+      <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="{{ url_for('home.home') }}">
+          <img src="{{ url_for('static', filename='images/logo.png') }}" alt="MelaScan Logo" style="height: 30px; margin-right: 10px;">
+          MelaScan
+        </a>
+        <div class="navbar-nav ms-auto">
+          <a class="nav-link" href="{{ url_for('auth.logout') }}">Logout</a>
         </div>
-        {% endfor %}
+      </div>
+    </nav>
+    
+    <!-- Report Header -->
+    <div class="dashboard-header">
+      <div class="container">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h1>Report for {{ report.patient.name }}</h1>
+            <p class="lead mb-0">{{ report.generated_on.strftime('%B %d, %Y') }}</p>
+          </div>
+          <div>
+            <a href="{{ url_for('doctor.download_report', report_id=report.id) }}" 
+               class="btn btn-primary me-2">
+              <i class="fas fa-download"></i> Download PDF
+            </a>
+            <a href="{{ url_for('doctor.view_patient', patient_id=report.patient.id) }}" 
+               class="btn btn-outline">
+              <i class="fas fa-arrow-left"></i> Back to Patient
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <a href="{{ url_for('doctor.download_report', report_id=report.id) }}">Download PDF</a>
+    <!-- Main Content -->
+    <main class="container mb-5">
+      <div class="patients-card">
+        <div class="row">
+          <!-- Report Details -->
+          <div class="col-md-8">
+            <h3 class="section-title">Report Findings</h3>
+            <div class="findings-content p-3 bg-light rounded mb-4">
+              {{ report.findings|replace('\n', '<br>')|safe }}
+            </div>
+            
+            <div class="row">
+              <div class="col-md-6">
+                <p><strong>Model Used:</strong> {{ report.model_used|upper }}</p>
+              </div>
+              <div class="col-md-6">
+                <p><strong>Generated By:</strong> Dr. {{ report.doctor.name }}</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Report Metadata -->
+          <div class="col-md-4">
+            <h3 class="section-title">Details</h3>
+            <div class="report-meta p-3 bg-light rounded">
+              <p><strong>Patient:</strong> {{ report.patient.name }}</p>
+              <p><strong>Contact:</strong> {{ report.patient.contact_number }}</p>
+              <p><strong>DOB:</strong> {{ report.patient.date_of_birth.strftime('%Y-%m-%d') if report.patient.date_of_birth else 'N/A' }}</p>
+              <p><strong>Report Date:</strong> {{ report.generated_on.strftime('%Y-%m-%d') }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Report Images -->
+        <h3 class="section-title mt-5">Images</h3>
+        {% if images %}
+        <div class="row">
+          {% for image in images %}
+          <div class="col-md-4 mb-4">
+            <div class="card h-100">
+              <img src="{{ url_for('static', filename=image.file_path.split('static/')[-1]) }}" 
+                   class="card-img-top" 
+                   style="height: 200px; object-fit: cover;">
+              <div class="card-body">
+                {% if image.analysis %}
+                <div class="analysis-result mb-2">
+                  <h5 class="mb-1">Analysis Results:</h5>
+                  <div class="d-flex align-items-center">
+                    <span class="badge bg-{{ 'success' if image.get_analysis_data().classification == 'benign' else 'danger' }} me-2">
+                      {{ image.get_analysis_data().classification|title }}
+                    </span>
+                    <small>Confidence: {{ (image.get_analysis_data().confidence * 100)|round(1) }}%</small>
+                  </div>
+                  <small class="text-muted">Model: {{ image.get_analysis_data().model_used }}</small>
+                </div>
+                {% endif %}
+                <small class="text-muted">Uploaded: {{ image.uploaded_on.strftime('%Y-%m-%d') }}</small>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+          <p>No images associated with this report.</p>
+        </div>
+        {% endif %}
+      </div>
+    </main>
+
+    <!-- Same Footer as dashboard -->
+    <footer>
+      <div class="container">
+        <p>&copy; 2024 MelaScan Medical Systems</p>
+      </div>
+    </footer>
 </body>
 </html>

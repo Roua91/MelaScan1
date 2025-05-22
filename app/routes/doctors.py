@@ -1,16 +1,24 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_from_directory, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_from_directory, current_app, jsonify
 from flask_login import login_required, current_user
 from app.models import Patient, Report, Image, UserClinicMap, PatientClinicMap
 from app.extensions import db
 from datetime import datetime
 from werkzeug.utils import secure_filename
+import uuid
 import os
+from flask_wtf import FlaskForm
 import json
+from app.services.ai_service import ai_service
+from app.services.pdf_generator import PDFGenerator
 
 doctor_bp = Blueprint('doctor', __name__, url_prefix='/doctor')
 
 def get_doctor_clinics():
     return [ua.clinic_id for ua in current_user.clinic_assignments]
+
+def allowed_file(filename):
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
 
 @doctor_bp.route('/dashboard')
 @login_required
@@ -70,11 +78,56 @@ def view_patient(patient_id):
                         reports=reports,
                         images=images)
 
+@doctor_bp.route('/api/analyze_image', methods=['POST'])
+@login_required
+def analyze_image_api():
+    try:
+        # Verify CSRF token for AJAX requests
+        if request.content_type.startswith('multipart/form-data'):
+            form = FlaskForm()
+            if not form.validate_on_submit():
+                return jsonify({
+                    'status': 'error',
+                    'message': 'CSRF token missing or invalid'
+                }), 400
+
+        if 'image' not in request.files:
+            return jsonify({'status': 'error', 'message': 'No image provided'}), 400
+            
+        image_file = request.files['image']
+        model = request.form.get('model', 'resnet_cbam')
+        
+        # Save temp file
+        temp_dir = os.path.join(current_app.config['UPLOAD_FOLDERS']['temp_images'], str(current_user.id))
+        os.makedirs(temp_dir, exist_ok=True)
+        temp_path = os.path.join(temp_dir, f"temp_{uuid.uuid4().hex}.jpg")
+        image_file.save(temp_path)
+        
+        # Call AI service
+        analysis_result = ai_service.analyze_image(temp_path, model)
+        
+        # Clean up temp file
+        try:
+            os.remove(temp_path)
+        except:
+            pass
+            
+        return jsonify({
+            'status': 'success',
+            'analysis': {
+                'classification': analysis_result['classification'],
+                'confidence': analysis_result['confidence'],
+                'model_used': analysis_result['model_used']
+            }
+        })
+    except Exception as e:
+        current_app.logger.error(f"Image analysis error: {str(e)}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+    
 @doctor_bp.route('/reports/create/<int:patient_id>', methods=['GET', 'POST'])
 @login_required
 def create_report(patient_id):
     clinic_ids = get_doctor_clinics()
-    
     patient = Patient.query.join(
         PatientClinicMap
     ).filter(
@@ -84,60 +137,171 @@ def create_report(patient_id):
 
     if request.method == 'POST':
         try:
+            # Create report first
             report = Report(
                 patient_id=patient_id,
                 doctor_id=current_user.id,
                 findings=request.form['findings'],
-                diagnosis=request.form['diagnosis'],
-                recommendations=request.form['recommendations']
+                model_used=request.form.get('model', 'resnet_cbam')
             )
             db.session.add(report)
-            db.session.flush()
-            
-            if 'images' in request.files:
-                for file in request.files.getlist('images'):
-                    if file.filename:
-                        filename = secure_filename(file.filename)
-                        upload_dir = os.path.join(
-                            current_app.root_path,
-                            'static/uploads',
-                            str(patient_id)
-                        )
-                        os.makedirs(upload_dir, exist_ok=True)
-                        filepath = os.path.join(upload_dir, filename)
-                        file.save(filepath)
-                        
-                        image = Image(
-                            patient_id=patient_id,
-                            report_id=report.id,
-                            filename=filename,
-                            file_path=filepath,
-                            uploaded_by=current_user.id
-                        )
-                        db.session.add(image)
-            
-            report.generate_pdf()
+            db.session.flush()  # Get the report ID
+
+            # Handle image uploads
+            upload_dir = os.path.join(
+                current_app.config['UPLOAD_FOLDERS']['patient_images'],
+                str(patient_id)
+            )
+            # Create directory if it doesn't exist
+            if not os.path.exists(upload_dir):
+                os.makedirs(upload_dir)
+
+            # Process each uploaded file
+            for file in request.files.getlist('images'):
+                if file and allowed_file(file.filename):
+                    filename = secure_filename(file.filename)
+                    filepath = os.path.join(upload_dir, filename)
+                    file.save(filepath)
+
+                    # Create image record
+                    image = Image(
+                        patient_id=patient_id,
+                        report_id=report.id,
+                        filename=filename,
+                        file_path=filepath,
+                        uploaded_by=current_user.id
+                    )
+                    db.session.add(image)
+
             db.session.commit()
             flash('Report created successfully!', 'success')
             return redirect(url_for('doctor.view_patient', patient_id=patient_id))
-            
+
         except Exception as e:
             db.session.rollback()
+            current_app.logger.error(f"Report creation error: {str(e)}")
             flash(f'Error: {str(e)}', 'danger')
-    
-    return render_template('doctor/create_report.html', patient=patient)
 
+    return render_template('doctor/create_report.html', 
+                        patient=patient,
+                        models=ai_service.models.keys())
+
+@doctor_bp.route('/reports/save/<int:patient_id>', methods=['POST'])
+@login_required
+def save_report(patient_id):
+    form = FlaskForm()  # For CSRF validation
+    
+    # Validate CSRF first
+    if not form.validate_on_submit():
+        error_msg = 'CSRF token missing or invalid'
+        if request.is_json:
+            return jsonify({'success': False, 'message': error_msg}), 400
+        flash(error_msg, 'danger')
+        return redirect(url_for('doctor.create_report', patient_id=patient_id))
+    
+    try:
+        # Verify patient access
+        clinic_ids = get_doctor_clinics()
+        patient = Patient.query.join(PatientClinicMap).filter(
+            PatientClinicMap.clinic_id.in_(clinic_ids),
+            Patient.id == patient_id
+        ).first_or_404()
+
+        # Validate required fields
+        if 'findings' not in request.form:
+            raise ValueError("Findings field is required")
+
+        # Create report
+        report = Report(
+            patient_id=patient_id,
+            doctor_id=current_user.id,
+            findings=request.form['findings'],
+            model_used=request.form.get('model', 'resnet_cbam'),
+            generated_on=datetime.utcnow()
+        )
+        db.session.add(report)
+        db.session.flush()  # Get report ID before committing
+
+        # Handle image uploads
+        upload_dir = os.path.join(
+            current_app.config['UPLOAD_FOLDERS']['patient_images'],
+            str(patient_id)
+        )
+        os.makedirs(upload_dir, exist_ok=True)
+
+        saved_images = []
+        for file in request.files.getlist('images'):
+            if file and allowed_file(file.filename):
+                filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
+                filepath = os.path.join(upload_dir, filename)
+                file.save(filepath)
+
+                image = Image(
+                    patient_id=patient_id,
+                    report_id=report.id,
+                    filename=filename,
+                    file_path=filepath,
+                    uploaded_by=current_user.id,
+                    uploaded_on=datetime.utcnow()
+                )
+                db.session.add(image)
+                saved_images.append(filename)
+
+        if not saved_images:
+            raise ValueError("At least one valid image is required")
+
+        db.session.commit()
+
+        # Generate PDF report
+        try:
+            pdf_path = PDFGenerator.generate_report(report)
+            report.pdf_path = pdf_path
+            db.session.commit()
+        except Exception as pdf_error:
+            current_app.logger.error(f"PDF generation failed: {str(pdf_error)}")
+
+        # Return response based on request type
+        response_data = {
+            'success': True,
+            'report_id': report.id,
+            'redirect': url_for('doctor.view_patient', patient_id=patient_id)
+        }
+
+        if request.is_json:
+            return jsonify(response_data)
+        
+        flash('Report saved successfully!', 'success')
+        return redirect(response_data['redirect'])
+
+    except Exception as e:
+        db.session.rollback()
+        error_msg = str(e)
+        current_app.logger.error(f"Report save failed: {error_msg}")
+        
+        if request.is_json:
+            return jsonify({'success': False, 'message': error_msg}), 400
+        
+        flash(f'Error: {error_msg}', 'danger')
+        return redirect(url_for('doctor.create_report', patient_id=patient_id))
+    
 @doctor_bp.route('/reports/<int:report_id>')
 @login_required
 def view_report(report_id):
-    report = Report.query.filter_by(
+    # Get report with patient and doctor info
+    report = Report.query.options(
+        db.joinedload(Report.patient),
+        db.joinedload(Report.doctor)
+    ).filter_by(
         id=report_id,
         doctor_id=current_user.id
     ).first_or_404()
     
-    return render_template('doctor/view_report.html', 
+    # Get associated images
+    images = Image.query.filter_by(report_id=report_id).all()
+    
+    return render_template('doctor/view_report.html',
                         report=report,
-                        json=json)
+                        images=images)
 
 @doctor_bp.route('/reports/<int:report_id>/download')
 @login_required
@@ -184,8 +348,7 @@ def upload_image(patient_id):
             if file and allowed_file(file.filename):
                 filename = secure_filename(file.filename)
                 upload_dir = os.path.join(
-                    current_app.root_path,
-                    'static/uploads',
+                    current_app.config['UPLOAD_FOLDERS']['patient_images'],
                     str(patient_id)
                 )
                 os.makedirs(upload_dir, exist_ok=True)
@@ -204,38 +367,8 @@ def upload_image(patient_id):
         flash('Images uploaded successfully!', 'success')
     except Exception as e:
         db.session.rollback()
+        current_app.logger.error(f"Image upload error: {str(e)}")
         flash(f'Error uploading images: {str(e)}', 'danger')
     
     return redirect(url_for('doctor.view_patient', patient_id=patient_id))
 
-@doctor_bp.route('/images/<int:image_id>/analyze')
-@login_required
-def analyze_image(image_id):
-    image = Image.query.join(
-        Patient
-    ).join(
-        PatientClinicMap
-    ).join(
-        UserClinicMap
-    ).filter(
-        UserClinicMap.user_id == current_user.id,
-        Image.id == image_id
-    ).first_or_404()
-    
-    # This would call your actual AI service
-    analysis_result = {
-        'diagnosis': 'Sample Diagnosis',
-        'confidence': 0.95,
-        'findings': 'Sample findings from AI analysis',
-        'recommendations': 'Sample recommendations'
-    }
-    
-    image.analysis = json.dumps(analysis_result)
-    db.session.commit()
-    
-    flash('Image analysis completed!', 'success')
-    return redirect(url_for('doctor.view_patient', patient_id=image.patient_id))
-
-def allowed_file(filename):
-    return '.' in filename and \
-        filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}

@@ -1,85 +1,414 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Create Report - {{ patient.name }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/create_report.css') }}">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Create Report | MelaScan</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --color-primary: #57619c;
+            --color-secondary: #7fa8d4;
+            --color-accent: #c370ca;
+            --color-dark: #18222c;
+            --color-light: #e1e0f0;
+            --color-white: rgb(251, 248, 248);
+        }
+
+        body {
+            background-color: var(--color-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .create-report-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background-color: var(--color-white);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        h1 {
+            color: var(--color-dark);
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--color-secondary);
+            padding-bottom: 0.5rem;
+        }
+
+        .section-title {
+            color: var(--color-primary);
+            font-weight: 500;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .section-title i {
+            font-size: 1.2rem;
+        }
+
+        .image-upload-section {
+            background: var(--color-white);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .image-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .image-card {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            background: var(--color-white);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .image-actions {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem;
+            background: var(--color-white);
+        }
+
+        .analysis-result {
+            background: var(--color-light);
+            padding: 1rem;
+            border-radius: 0 0 10px 10px;
+            font-size: 0.9rem;
+        }
+
+        .btn-upload {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-upload:hover {
+            background-color: #47507e;
+            transform: translateY(-2px);
+        }
+
+        .btn-analyze {
+            background-color: var(--color-accent);
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-analyze:hover {
+            background-color: #b05fb7;
+        }
+
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .btn-delete:hover {
+            background-color: #c0392b;
+        }
+
+        .findings-section textarea {
+            min-height: 200px;
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            background: var(--color-white);
+            transition: border 0.2s;
+        }
+
+        .findings-section textarea:focus {
+            border-color: var(--color-secondary);
+            box-shadow: 0 0 0 0.25rem rgba(127, 168, 212, 0.25);
+            outline: none;
+        }
+
+        .btn-save {
+            background-color: var(--color-primary);
+            color: white;
+            border: none;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        .btn-save:hover {
+            background-color: #47507e;
+            transform: translateY(-2px);
+        }
+
+        .badge-benign {
+            background-color: #2ecc71;
+        }
+
+        .badge-malignant {
+            background-color: #e74c3c;
+        }
+
+        .loading-spinner {
+            color: var(--color-primary);
+        }
+
+        .model-selector {
+            display: flex;
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+
+        .form-check-input:checked {
+            background-color: var(--color-primary);
+            border-color: var(--color-primary);
+        }
+
+        @media (max-width: 768px) {
+            .create-report-container {
+                padding: 1rem;
+                margin: 1rem;
+            }
+            
+            .image-preview-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+        }
+    </style>
 </head>
 <body>
-    <nav>
-        <a href="{{ url_for('doctor.view_patient', patient_id=patient.id) }}">Back to Patient</a>
-    </nav>
+    <div class="create-report-container">
+        <h1><i class="fas fa-file-medical"></i> Create New Report</h1>
+        
+        <form id="reportForm" method="POST" action="{{ url_for('doctor.save_report', patient_id=patient.id) }}" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <!-- Image Upload Section -->
+            <div class="image-upload-section">
+                <h3 class="section-title"><i class="fas fa-images"></i> Images</h3>
+                <input type="file" id="imageUpload" name="images" multiple accept="image/*" style="display: none;">
+                <button type="button" class="btn btn-upload" onclick="document.getElementById('imageUpload').click()">
+                    <i class="fas fa-plus"></i> Add Images
+                </button>
+                
+                <div class="image-preview-grid" id="imagePreviews">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
 
-    <h1>Create Report for {{ patient.name }}</h1>
+            <!-- Model Selection -->
+            <div class="image-upload-section">
+                <h3 class="section-title"><i class="fas fa-brain"></i> Analysis Model</h3>
+                <div class="model-selector">
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="model" id="modelResnet" value="resnet_cbam" checked>
+                        <label class="form-check-label" for="modelResnet">ResNet CBAM</label>
+                    </div>
+                </div>
+            </div>
 
-    <form method="POST" enctype="multipart/form-data">
-        <div>
-            <label>Findings</label>
-            <textarea name="findings" required></textarea>
-        </div>
+            <!-- Findings Section -->
+            <div class="image-upload-section">
+                <h3 class="section-title"><i class="fas fa-search"></i> Findings</h3>
+                <textarea name="findings" class="form-control findings-section" 
+                          placeholder="Enter your clinical findings..." required></textarea>
+            </div>
 
-        <div>
-            <label>Diagnosis</label>
-            <textarea name="diagnosis" required></textarea>
-        </div>
-
-        <div>
-            <label>Recommendations</label>
-            <textarea name="recommendations" required></textarea>
-        </div>
-
-        <div>
-            <label>Select AI Model</label>
-            <select name="ai_model">
-                <option value="model_a">Model</option>
-                <option value="model_b">Model B</option>
-                <option value="model_c">Model C</option>
-            </select>
-        </div>
-
-        <div>
-            <label>Upload Images (Optional)</label>
-            <input type="file" name="images" id="imageInput" multiple accept="image/*">
-        </div>
-
-        <div id="imagePreviewContainer">
-            <h3>Uploaded Images:</h3>
-            <ul id="imageList"></ul>
-        </div>
-
-        <button type="submit">Create Report</button>
-    </form>
+            <!-- Submit Button -->
+            <div class="text-end mt-4">
+                <button type="submit" class="btn btn-save">
+                    <i class="fas fa-save"></i> Save Report
+                </button>
+            </div>
+        </form>
+    </div>
 
     <script>
-        const imageInput = document.getElementById('imageInput');
-        const imageList = document.getElementById('imageList');
-
-        imageInput.addEventListener('change', function() {
-            imageList.innerHTML = '';
-            for (const file of this.files) {
-                const li = document.createElement('li');
-                const reader = new FileReader();
-
-                reader.onload = function(e) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.width = 100;
-
-                    const analyzeBtn = document.createElement('button');
-                    analyzeBtn.type = 'button';
-                    analyzeBtn.textContent = 'Analyze';
-                    analyzeBtn.onclick = () => {
-                        alert('AI analysis will be triggered on backend after form submission.');
-                    };
-
-                    li.appendChild(img);
-                    li.appendChild(document.createTextNode(' ' + file.name + ' '));
-                    li.appendChild(analyzeBtn);
-                    imageList.appendChild(li);
-                };
-
-                reader.readAsDataURL(file);
+    // Initialize CSRF token handling
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get CSRF token from meta tag
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+        
+        // Set up AJAX to include CSRF token by default
+        $.ajaxSetup({
+            headers: {
+                'X-CSRF-TOKEN': csrfToken
             }
         });
+    });
+
+    // Image upload and preview handling
+    document.getElementById('imageUpload').addEventListener('change', function(e) {
+        const files = e.target.files;
+        const previewContainer = document.getElementById('imagePreviews');
+        
+        for (let file of files) {
+            if (!file.type.match('image.*')) continue;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const tempId = 'img-' + Math.random().toString(36).substr(2, 9);
+                const preview = document.createElement('div');
+                preview.className = 'image-card';
+                preview.id = tempId;
+                preview.innerHTML = `
+                    <img src="${e.target.result}" alt="${file.name}">
+                    <div class="image-actions">
+                        <button type="button" class="btn btn-delete" onclick="removeImage('${tempId}')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                        <button type="button" class="btn-analyze" onclick="analyzeImage('${tempId}')">
+                            <i class="fas fa-search"></i> Analyze
+                        </button>
+                    </div>
+                    <div class="analysis-result" id="${tempId}-analysis" style="display:none"></div>
+                `;
+                previewContainer.appendChild(preview);
+                
+                // Store file reference
+                file.tempId = tempId;
+                window.uploadedFiles = window.uploadedFiles || {};
+                window.uploadedFiles[tempId] = file;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    async function analyzeImage(id) {
+        const file = window.uploadedFiles[id];
+        if (!file) return;
+        
+        const model = document.querySelector('input[name="model"]:checked').value;
+        const analysisDiv = document.getElementById(`${id}-analysis`);
+        analysisDiv.style.display = 'block';
+        analysisDiv.innerHTML = '<div class="text-center py-2"><i class="fas fa-spinner fa-spin loading-spinner me-2"></i> Analyzing image...</div>';
+        
+        try {
+            const formData = new FormData();
+            formData.append('image', file);
+            formData.append('model', model);
+            
+            const response = await fetch("{{ url_for('doctor.analyze_image_api') }}", {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                }
+            });
+            
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                analysisDiv.innerHTML = `
+                    <div class="p-2">
+                        <p class="mb-1"><strong>Result:</strong> 
+                            <span class="badge ${data.analysis.classification === 'benign' ? 'badge-benign' : 'badge-malignant'}">
+                                ${data.analysis.classification.toUpperCase()}
+                            </span>
+                        </p>
+                        <p class="mb-1"><strong>Confidence:</strong> ${(data.analysis.confidence * 100).toFixed(1)}%</p>
+                        ${data.analysis.details ? `<p class="mb-0"><strong>Details:</strong> ${data.analysis.details}</p>` : ''}
+                    </div>
+                `;
+                
+                // Store analysis results
+                file.analysis = data.analysis;
+            } else {
+                throw new Error(data.message || 'Analysis failed');
+            }
+        } catch (error) {
+            analysisDiv.innerHTML = `<div class="text-danger p-2"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
+            console.error('Error:', error);
+        }
+    }
+
+    function removeImage(id) {
+        const preview = document.getElementById(id);
+        if (preview) preview.remove();
+        
+        if (window.uploadedFiles && window.uploadedFiles[id]) {
+            delete window.uploadedFiles[id];
+        }
+    }
+
+    // Form submission handler
+    document.getElementById('reportForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const form = e.target;
+    const formData = new FormData(form);
+    
+    // Add CSRF token if not already in formData
+    if (!formData.has('csrf_token')) {
+        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+        formData.append('csrf_token', csrfToken);
+    }
+
+    const submitBtn = form.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+
+    try {
+        const response = await fetch(form.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+            }
+        });
+
+        const result = await response.json();
+        if (result.success && result.redirect) {
+            window.location.href = result.redirect;
+        } else {
+            throw new Error(result.message || 'Failed to save report');
+        }
+    } catch (error) {
+        alert(`Error: ${error.message}`);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Report';
+    }
+});
     </script>
 </body>
 </html>

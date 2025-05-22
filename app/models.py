@@ -1,8 +1,10 @@
-from app import db
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 import json
 from flask_login import UserMixin
+from flask import current_app
+from app.extensions import db
+from app.services.pdf_generator import PDFGenerator
 
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
@@ -49,12 +51,10 @@ class Clinic(db.Model):
     staff_assignments = db.relationship('UserClinicMap', back_populates='clinic')
     patient_assignments = db.relationship('PatientClinicMap', back_populates='clinic')
     credentials = db.relationship('ClinicCredential', back_populates='clinic')
-    registrations = db.relationship('ClinicRegistration', back_populates='clinic')
-    
     registrations = db.relationship(
         'ClinicRegistration', 
         back_populates='clinic',
-        foreign_keys='ClinicRegistration.clinic_id'  # Make this explicit
+        foreign_keys='ClinicRegistration.clinic_id'
     )
 
 class UserClinicMap(db.Model):
@@ -75,8 +75,9 @@ class Patient(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), nullable=False)
     contact_number = db.Column(db.String(20), nullable=False)
-    date_of_birth = db.Column(db.Date, nullable=False)
-    date_created = db.Column(db.DateTime, default=datetime.utcnow)  
+    date_of_birth = db.Column(db.Date)
+    gender = db.Column(db.String(10))
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Relationships
     clinic_relationships = db.relationship('PatientClinicMap', back_populates='patient')
@@ -96,47 +97,63 @@ class PatientClinicMap(db.Model):
 
 class Report(db.Model):
     __tablename__ = 'reports'
+    
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
     doctor_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    
-    # Report content
-    findings = db.Column(db.Text)
-    diagnosis = db.Column(db.Text)
-    recommendations = db.Column(db.Text)
-    
-    # PDF storage
-    pdf_path = db.Column(db.String(500))  
-    pdf_filename = db.Column(db.String(255)) 
-    
-    # Timestamps
+    findings = db.Column(db.Text, nullable=False)
     generated_on = db.Column(db.DateTime, default=datetime.utcnow)
-    last_updated = db.Column(db.DateTime, onupdate=datetime.utcnow)
+    pdf_path = db.Column(db.String(255))
+    model_used = db.Column(db.String(50), default='resnet_cbam')
     
     # Relationships
     patient = db.relationship('Patient', back_populates='reports')
+    images = db.relationship('Image', back_populates='report')
     doctor = db.relationship('User', back_populates='reports')
     
     def generate_pdf(self):
-        """Generate PDF version of the report"""
-        from app.services.pdf_generator import generate_report_pdf
-        self.pdf_path, self.pdf_filename = generate_report_pdf(self)
-        return self.pdf_path
+        """Generate PDF report using PDFGenerator service"""
+        try:
+            images = Image.query.filter_by(report_id=self.id).all()
+            pdf_path = PDFGenerator.generate_report_pdf(self, images)
+            self.pdf_path = pdf_path
+            return True
+        except Exception as e:
+            current_app.logger.error(f"Error generating PDF: {str(e)}")
+            return False
 
 class Image(db.Model):
     __tablename__ = 'images'
+    
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
+    report_id = db.Column(db.Integer, db.ForeignKey('reports.id'))
     filename = db.Column(db.String(255), nullable=False)
-    file_path = db.Column(db.String(500), nullable=False)
+    file_path = db.Column(db.String(512), nullable=False)
     uploaded_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    upload_date = db.Column(db.DateTime, default=datetime.utcnow)
-    analysis = db.Column(db.Text)
-    analysis_date = db.Column(db.DateTime)
+    uploaded_on = db.Column(db.DateTime, default=datetime.utcnow)
+    analysis = db.Column(db.Text)  # Stores JSON with analysis results
     
     # Relationships
     patient = db.relationship('Patient', back_populates='images')
+    report = db.relationship('Report', back_populates='images')
     uploader = db.relationship('User', back_populates='uploaded_images')
+
+    def get_analysis_data(self):
+        """Return parsed analysis data or None if not available"""
+        if self.analysis:
+            try:
+                data = json.loads(self.analysis)
+                return {
+                    'classification': data.get('classification', 'unknown'),
+                    'confidence': float(data.get('confidence', 0)),
+                    'model_used': data.get('model_used', 'unknown')
+                }
+            except (json.JSONDecodeError, ValueError) as e:
+                current_app.logger.error(f"Error parsing analysis data: {str(e)}")
+                return None
+        return None
+    
 
 class ClinicRegistration(db.Model):
     __tablename__ = 'clinic_registrations'
@@ -167,13 +184,11 @@ class ClinicRegistration(db.Model):
         back_populates='processed_registrations', 
         foreign_keys=[processed_by]
     )
-
     clinic = db.relationship(
         'Clinic', 
         back_populates='registrations',
         foreign_keys=[clinic_id]  
     )
-    
     
     def set_doctor_passwords(self, doctor_passwords_dict):
         """Save doctor passwords as a JSON string."""
