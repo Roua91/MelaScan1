@@ -13,6 +13,12 @@ from app.forms import ClinicRegistrationForm, LoginForm
 from app.models import ClinicRegistration, User, Clinic, UserClinicMap, ClinicCredential
 from app.extensions import db
 
+# Add these imports at the top of auth.py
+from app.services.password_service import PasswordService
+from app.forms import ForgotPasswordForm, ResetPasswordForm
+from itsdangerous import URLSafeTimedSerializer
+from flask_mail import Message
+
 # Set up logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -289,3 +295,47 @@ def get_status_message(status):
         'rejected': 'Your application was rejected'
     }
     return messages.get(status, 'Unknown application status')
+
+
+
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if current_user.is_authenticated:
+        return redirect_to_dashboard()
+    
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        user = User.query.filter_by(email=form.email.data).first()
+        if user:
+            token = user.email
+            return redirect(url_for('auth.reset_password', token=token))
+        else:
+            flash('If an account exists with this email, you will be redirected to reset your password.', 'info')
+    
+    # Changed from 'auth/forgot_password.html' to 'registration/forgot_password.html'
+    return render_template('registration/forgot_password.html', form=form)
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect_to_dashboard()
+    
+    user = User.query.filter_by(email=token).first()
+    if not user:
+        flash('Invalid password reset request.', 'danger')
+        return redirect(url_for('auth.forgot_password'))
+    
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        try:
+            user.set_password(form.password.data)
+            db.session.commit()
+            flash('Your password has been updated! You can now log in.', 'success')
+            return redirect(url_for('auth.login'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Error updating password. Please try again.', 'danger')
+    
+    # Changed from 'auth/reset_password.html' to 'registration/reset_password.html'
+    return render_template('registration/reset_password.html', form=form)

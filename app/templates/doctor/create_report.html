@@ -1,3 +1,4 @@
+<!-- Updated create_report.html -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -202,12 +203,39 @@
             border-color: var(--color-primary);
         }
 
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            display: none;
+        }
+
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .spinner-lg {
+            width: 3rem;
+            height: 3rem;
+        }
+
         @media (max-width: 768px) {
             .create-report-container {
                 padding: 1rem;
                 margin: 1rem;
             }
-            
+
             .image-preview-grid {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
             }
@@ -217,41 +245,45 @@
 <body>
     <div class="create-report-container">
         <h1><i class="fas fa-file-medical"></i> Create New Report</h1>
-        
+
         <form id="reportForm" method="POST" action="{{ url_for('doctor.save_report', patient_id=patient.id) }}" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <!-- Image Upload Section -->
             <div class="image-upload-section">
                 <h3 class="section-title"><i class="fas fa-images"></i> Images</h3>
                 <input type="file" id="imageUpload" name="images" multiple accept="image/*" style="display: none;">
                 <button type="button" class="btn btn-upload" onclick="document.getElementById('imageUpload').click()">
                     <i class="fas fa-plus"></i> Add Images
                 </button>
-                
-                <div class="image-preview-grid" id="imagePreviews">
-                    <!-- Will be populated by JavaScript -->
-                </div>
+                <div class="image-preview-grid" id="imagePreviews"></div>
             </div>
 
-            <!-- Model Selection -->
             <div class="image-upload-section">
                 <h3 class="section-title"><i class="fas fa-brain"></i> Analysis Model</h3>
+                <div class="model-info mb-3">
+                    <div class="alert alert-info p-2">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Using ResNet50-CBAM 
+                    </div>
+                </div>
                 <div class="model-selector">
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="model" id="modelResnet" value="resnet_cbam" checked>
-                        <label class="form-check-label" for="modelResnet">ResNet CBAM</label>
+                        <label class="form-check-label" for="modelResnet">
+                            ResNet CBAM
+                        </label>
                     </div>
+                </div>
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Note:</strong> AI analysis is a decision-support tool only.
                 </div>
             </div>
 
-            <!-- Findings Section -->
             <div class="image-upload-section">
                 <h3 class="section-title"><i class="fas fa-search"></i> Findings</h3>
-                <textarea name="findings" class="form-control findings-section" 
-                          placeholder="Enter your clinical findings..." required></textarea>
+                <textarea name="findings" class="form-control findings-section" placeholder="Enter your clinical findings..." required></textarea>
             </div>
 
-            <!-- Submit Button -->
             <div class="text-end mt-4">
                 <button type="submit" class="btn btn-save">
                     <i class="fas fa-save"></i> Save Report
@@ -260,155 +292,149 @@
         </form>
     </div>
 
+    <div class="loading-overlay" id="globalLoader">
+        <div class="loading-content">
+            <div class="spinner-border spinner-lg text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <h5 class="mt-3" id="loadingText">Processing Analysis</h5>
+        </div>
+    </div>
+
     <script>
-    // Initialize CSRF token handling
-    document.addEventListener('DOMContentLoaded', function() {
-        // Get CSRF token from meta tag
-        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-        
-        // Set up AJAX to include CSRF token by default
-        $.ajaxSetup({
-            headers: {
-                'X-CSRF-TOKEN': csrfToken
-            }
-        });
-    });
-
-    // Image upload and preview handling
-    document.getElementById('imageUpload').addEventListener('change', function(e) {
-        const files = e.target.files;
-        const previewContainer = document.getElementById('imagePreviews');
-        
-        for (let file of files) {
-            if (!file.type.match('image.*')) continue;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const tempId = 'img-' + Math.random().toString(36).substr(2, 9);
-                const preview = document.createElement('div');
-                preview.className = 'image-card';
-                preview.id = tempId;
-                preview.innerHTML = `
-                    <img src="${e.target.result}" alt="${file.name}">
-                    <div class="image-actions">
-                        <button type="button" class="btn btn-delete" onclick="removeImage('${tempId}')">
-                            <i class="fas fa-trash"></i> Delete
-                        </button>
-                        <button type="button" class="btn-analyze" onclick="analyzeImage('${tempId}')">
-                            <i class="fas fa-search"></i> Analyze
-                        </button>
-                    </div>
-                    <div class="analysis-result" id="${tempId}-analysis" style="display:none"></div>
-                `;
-                previewContainer.appendChild(preview);
-                
-                // Store file reference
-                file.tempId = tempId;
-                window.uploadedFiles = window.uploadedFiles || {};
-                window.uploadedFiles[tempId] = file;
-            };
-            reader.readAsDataURL(file);
+        function showGlobalLoader(text = 'Processing Analysis') {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('globalLoader').style.display = 'flex';
         }
-    });
 
-    async function analyzeImage(id) {
-        const file = window.uploadedFiles[id];
-        if (!file) return;
-        
-        const model = document.querySelector('input[name="model"]:checked').value;
-        const analysisDiv = document.getElementById(`${id}-analysis`);
-        analysisDiv.style.display = 'block';
-        analysisDiv.innerHTML = '<div class="text-center py-2"><i class="fas fa-spinner fa-spin loading-spinner me-2"></i> Analyzing image...</div>';
-        
-        try {
-            const formData = new FormData();
-            formData.append('image', file);
-            formData.append('model', model);
-            
-            const response = await fetch("{{ url_for('doctor.analyze_image_api') }}", {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        function hideGlobalLoader() {
+            document.getElementById('globalLoader').style.display = 'none';
+        }
+
+        document.getElementById('imageUpload').addEventListener('change', function(e) {
+            const files = Array.from(e.target.files);
+            const validFiles = files.filter(file => {
+                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                const maxSize = 5 * 1024 * 1024;
+                if (!validTypes.includes(file.type)) {
+                    alert(`Unsupported file type: ${file.name}. Please upload JPG or PNG files.`);
+                    return false;
                 }
+                if (file.size > maxSize) {
+                    alert(`File too large: ${file.name}. Maximum size is 5MB.`);
+                    return false;
+                }
+                return true;
             });
-            
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            
-            const data = await response.json();
-            
-            if (data.status === 'success') {
-                analysisDiv.innerHTML = `
-                    <div class="p-2">
-                        <p class="mb-1"><strong>Result:</strong> 
-                            <span class="badge ${data.analysis.classification === 'benign' ? 'badge-benign' : 'badge-malignant'}">
-                                ${data.analysis.classification.toUpperCase()}
-                            </span>
-                        </p>
-                        <p class="mb-1"><strong>Confidence:</strong> ${(data.analysis.confidence * 100).toFixed(1)}%</p>
-                        ${data.analysis.details ? `<p class="mb-0"><strong>Details:</strong> ${data.analysis.details}</p>` : ''}
-                    </div>
-                `;
-                
-                // Store analysis results
-                file.analysis = data.analysis;
-            } else {
-                throw new Error(data.message || 'Analysis failed');
-            }
-        } catch (error) {
-            analysisDiv.innerHTML = `<div class="text-danger p-2"><i class="fas fa-exclamation-triangle me-2"></i>Error: ${error.message}</div>`;
-            console.error('Error:', error);
-        }
-    }
-
-    function removeImage(id) {
-        const preview = document.getElementById(id);
-        if (preview) preview.remove();
-        
-        if (window.uploadedFiles && window.uploadedFiles[id]) {
-            delete window.uploadedFiles[id];
-        }
-    }
-
-    // Form submission handler
-    document.getElementById('reportForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const form = e.target;
-    const formData = new FormData(form);
-    
-    // Add CSRF token if not already in formData
-    if (!formData.has('csrf_token')) {
-        const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-        formData.append('csrf_token', csrfToken);
-    }
-
-    const submitBtn = form.querySelector('button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
-
-    try {
-        const response = await fetch(form.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
-            }
+            validFiles.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const tempId = 'img-' + Math.random().toString(36).substr(2, 9);
+                    const preview = document.createElement('div');
+                    preview.className = 'image-card';
+                    preview.id = tempId;
+                    preview.innerHTML = `
+                        <img src="${e.target.result}" alt="${file.name}">
+                        <div class="image-actions">
+                            <button type="button" class="btn btn-delete" onclick="removeImage('${tempId}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                            <button type="button" class="btn-analyze" onclick="analyzeImage('${tempId}')">
+                                <i class="fas fa-search"></i> Analyze
+                            </button>
+                        </div>
+                        <div class="analysis-result" id="${tempId}-analysis" style="display:none"></div>
+                    `;
+                    document.getElementById('imagePreviews').appendChild(preview);
+                    file.tempId = tempId;
+                    window.uploadedFiles = window.uploadedFiles || {};
+                    window.uploadedFiles[tempId] = file;
+                };
+                reader.readAsDataURL(file);
+            });
         });
 
-        const result = await response.json();
-        if (result.success && result.redirect) {
-            window.location.href = result.redirect;
-        } else {
-            throw new Error(result.message || 'Failed to save report');
+        async function analyzeImage(id) {
+            const file = window.uploadedFiles[id];
+            if (!file) return;
+            const model = document.querySelector('input[name="model"]:checked').value;
+            const analysisDiv = document.getElementById(`${id}-analysis`);
+            analysisDiv.style.display = 'block';
+            showGlobalLoader('Analyzing image...');
+            try {
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('model', model);
+                const response = await fetch("{{ url_for('doctor.analyze_image_api') }}", {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+                    }
+                });
+                const data = await response.json();
+                if (data.status === 'success') {
+                    analysisDiv.innerHTML = `
+                        <div class="p-2">
+                            <p class="mb-1"><strong>Result:</strong> 
+                                <span class="badge ${data.analysis.classification === 'benign' ? 'bg-success' : 'bg-danger'}">
+                                    ${data.analysis.classification.toUpperCase()}
+                                </span>
+                                <span class="badge bg-info ms-2">
+                                    ${(data.analysis.classification === 'benign' 
+                                    ? (data.analysis.probabilities.benign * 100).toFixed(1)
+                                    : (data.analysis.probabilities.malignant * 100).toFixed(1))}%
+                                </span>
+                            </p>
+                            <p class="small mb-0"><i class="fas fa-microscope me-1"></i> Model: ${data.analysis.model_used}</p>
+                        </div>
+                    `;
+                    file.analysis = data.analysis;
+                } else {
+                    throw new Error(data.message || 'Analysis failed');
+                }
+            } catch (error) {
+                analysisDiv.innerHTML = `
+                    <div class="alert alert-danger p-2 m-0">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Analysis Error:</strong> ${error.message}
+                        ${error.response?.data?.details ? `<div class="mt-1 small">${error.response.data.details}</div>` : ''}
+                    </div>
+                `;
+            } finally {
+                hideGlobalLoader();
+            }
         }
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.innerHTML = '<i class="fas fa-save"></i> Save Report';
-    }
-});
+
+        document.getElementById('reportForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            showGlobalLoader('Saving report...');
+            const form = e.target;
+            const formData = new FormData(form);
+            if (!formData.has('csrf_token')) {
+                const csrfToken = document.querySelector('input[name="csrf_token"]').value;
+                formData.append('csrf_token', csrfToken);
+            }
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+                    }
+                });
+                const result = await response.json();
+                if (result.success && result.redirect) {
+                    window.location.href = result.redirect;
+                } else {
+                    throw new Error(result.message || 'Failed to save report');
+                }
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideGlobalLoader();
+            }
+        });
     </script>
 </body>
 </html>

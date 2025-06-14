@@ -78,6 +78,7 @@ def view_patient(patient_id):
                         reports=reports,
                         images=images)
 
+
 @doctor_bp.route('/api/analyze_image', methods=['POST'])
 @login_required
 def analyze_image_api():
@@ -93,35 +94,78 @@ def analyze_image_api():
 
         if 'image' not in request.files:
             return jsonify({'status': 'error', 'message': 'No image provided'}), 400
-            
+
         image_file = request.files['image']
         model = request.form.get('model', 'resnet_cbam')
-        
-        # Save temp file
-        temp_dir = os.path.join(current_app.config['UPLOAD_FOLDERS']['temp_images'], str(current_user.id))
+
+        # Ensure the temp_images directory exists in config
+        if 'temp_images' not in current_app.config['UPLOAD_FOLDERS']:
+            current_app.config['UPLOAD_FOLDERS']['temp_images'] = os.path.join(
+                current_app.instance_path,
+                'uploads',
+                'temp_images'
+            )
+
+        # Create user-specific temp directory
+        temp_dir = os.path.join(
+            current_app.config['UPLOAD_FOLDERS']['temp_images'],
+            str(current_user.id)
+        )
         os.makedirs(temp_dir, exist_ok=True)
-        temp_path = os.path.join(temp_dir, f"temp_{uuid.uuid4().hex}.jpg")
+
+        # Generate temp file path
+        temp_filename = f"temp_{uuid.uuid4().hex}.jpg"
+        temp_path = os.path.join(temp_dir, temp_filename)
+
+        # Save the file
         image_file.save(temp_path)
-        
+
+        # Verify file was saved
+        if not os.path.exists(temp_path):
+            raise IOError("Failed to save temporary image file")
+
         # Call AI service
         analysis_result = ai_service.analyze_image(temp_path, model)
-        
-        # Clean up temp file
-        try:
-            os.remove(temp_path)
-        except:
-            pass
-            
+
+        # Return response
         return jsonify({
             'status': 'success',
             'analysis': {
                 'classification': analysis_result['classification'],
-                'confidence': analysis_result['confidence'],
-                'model_used': analysis_result['model_used']
+                'confidence': round(analysis_result['confidence'], 4),
+                'probabilities': {
+                    'benign': round(analysis_result['probabilities']['benign'], 4),
+                    'malignant': round(analysis_result['probabilities']['malignant'], 4)
+                },
+                'model_used': 'ResNet50-CBAM (Selective)',  # Updated model name
+                'model_version': '1.1'
+            }
+        })
+
+    except Exception as e:
+        current_app.logger.error(f"Unexpected error in image analysis: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': 'An unexpected error occurred'
+        }), 500
+
+    
+@doctor_bp.route('/api/model_info')
+@login_required
+def model_info():
+    try:
+        model_info = ai_service.get_model_info('resnet_cbam')
+        return jsonify({
+            'status': 'success',
+            'model': {
+                'name': 'ResNet50-CBAM (Selective)',
+                'architecture': 'Custom ResNet50 with CBAM in first block of each layer',
+                'parameters': model_info['total_parameters'],
+                'input_size': '224x224 RGB',
+                'classes': ['benign', 'malignant']
             }
         })
     except Exception as e:
-        current_app.logger.error(f"Image analysis error: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
     
 @doctor_bp.route('/reports/create/<int:patient_id>', methods=['GET', 'POST'])
@@ -321,12 +365,36 @@ def download_report(report_id):
         as_attachment=True,
         mimetype='application/pdf'
     )
+    
+@doctor_bp.route('/images/<int:patient_id>/<filename>')
+@login_required
+def serve_image(patient_id, filename):
+    # Verify patient access
+    clinic_ids = get_doctor_clinics()
+    patient = Patient.query.join(PatientClinicMap).filter(
+        PatientClinicMap.clinic_id.in_(clinic_ids),
+        Patient.id == patient_id
+    ).first_or_404()
+
+    # Verify image exists
+    image = Image.query.filter_by(
+        patient_id=patient_id,
+        filename=filename
+    ).first_or_404()
+
+    upload_dir = os.path.join(
+        current_app.config['UPLOAD_FOLDERS']['patient_images'],
+        str(patient_id)
+    ) 
+
+    return send_from_directory(upload_dir, filename)
+
 
 @doctor_bp.route('/images/upload/<int:patient_id>', methods=['POST'])
 @login_required
 def upload_image(patient_id):
     clinic_ids = get_doctor_clinics()
-    
+
     patient = Patient.query.join(
         PatientClinicMap
     ).filter(
@@ -337,16 +405,17 @@ def upload_image(patient_id):
     if 'images' not in request.files:
         flash('No files selected', 'danger')
         return redirect(url_for('doctor.view_patient', patient_id=patient_id))
-    
+
     files = request.files.getlist('images')
     if not files or files[0].filename == '':
         flash('No files selected', 'danger')
         return redirect(url_for('doctor.view_patient', patient_id=patient_id))
-    
+
     try:
         for file in files:
             if file and allowed_file(file.filename):
-                filename = secure_filename(file.filename)
+                # Generate unique filename
+                filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
                 upload_dir = os.path.join(
                     current_app.config['UPLOAD_FOLDERS']['patient_images'],
                     str(patient_id)
@@ -354,21 +423,20 @@ def upload_image(patient_id):
                 os.makedirs(upload_dir, exist_ok=True)
                 filepath = os.path.join(upload_dir, filename)
                 file.save(filepath)
-                
+
                 image = Image(
                     patient_id=patient_id,
                     filename=filename,
-                    file_path=filepath,
+                    file_path=filepath.replace(os.sep, '/'),  # Ensure consistent path format
                     uploaded_by=current_user.id
                 )
                 db.session.add(image)
-        
+
         db.session.commit()
         flash('Images uploaded successfully!', 'success')
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Image upload error: {str(e)}")
         flash(f'Error uploading images: {str(e)}', 'danger')
-    
-    return redirect(url_for('doctor.view_patient', patient_id=patient_id))
 
+    return redirect(url_for('doctor.view_patient', patient_id=patient_id))
