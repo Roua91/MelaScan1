@@ -46,5 +46,10 @@ flask db migrate -m "Initial"
 flask db upgrade
 ```
 
-
-
+### additional imports
+pip install torch
+pip install numpy
+pip install Pillow
+pip install torchvision
+pip install fpdf
+.env created for uploads
