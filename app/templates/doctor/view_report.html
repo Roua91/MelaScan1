@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Report Details | MelaScan</title>
+    <!-- Add Bootstrap and Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-    :root {
+      :root {
       --color-primary: #57619c;
       --color-secondary: #7fa8d4;
       --color-accent: #c370ca;
@@ -226,6 +229,57 @@
       text-align: center;
       margin-top: auto;
     }
+    .report-header {
+      background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+      color: white;
+      padding: var(--space-lg);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-md);
+      box-shadow: var(--shadow-md);
+    }
+
+    .findings-content {
+      background-color: var(--color-white);
+      border-left: 4px solid var(--color-accent);
+      padding: var(--space-md);
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
+      box-shadow: var(--shadow-light);
+    }
+
+    .image-card {
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0,0,0,0.1);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .image-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+
+    .analysis-badge {
+      font-size: 0.8rem;
+      padding: 0.25rem 0.5rem;
+    }
+
+    .meta-card {
+      background-color: var(--color-white);
+      border-radius: var(--radius-md);
+      padding: var(--space-md);
+      box-shadow: var(--shadow-light);
+    }
+
+    .meta-item {
+      padding: 0.5rem 0;
+      border-bottom: 1px solid rgba(0,0,0,0.05);
+    }
+
+    .meta-item:last-child {
+      border-bottom: none;
+    }
+
+    /* Keep the rest of your existing styles */
     </style>
 </head>
 <body>
@@ -242,22 +296,31 @@
       </div>
     </nav>
     
-    <!-- Report Header -->
-    <div class="dashboard-header">
+    <!-- Enhanced Report Header -->
+    <div class="report-header">
       <div class="container">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center">
           <div>
-            <h1>Report for {{ report.patient.name }}</h1>
-            <p class="lead mb-0">{{ report.generated_on.strftime('%B %d, %Y') }}</p>
+            <h1 class="mb-2">Report for {{ report.patient.name }}</h1>
+            <div class="d-flex align-items-center gap-3">
+              <span class="badge bg-light text-dark">
+                <i class="fas fa-calendar me-1"></i>
+                {{ report.generated_on.strftime('%B %d, %Y') }}
+              </span>
+              <span class="badge bg-light text-dark">
+                <i class="fas fa-user-md me-1"></i>
+                Dr. {{ report.doctor.name }}
+              </span>
+            </div>
           </div>
-          <div>
+          <div class="mt-3 mt-md-0 d-flex gap-2">
             <a href="{{ url_for('doctor.download_report', report_id=report.id) }}" 
-               class="btn btn-primary me-2">
-              <i class="fas fa-download"></i> Download PDF
+               class="btn btn-light">
+              <i class="fas fa-download me-2"></i> Download PDF
             </a>
             <a href="{{ url_for('doctor.view_patient', patient_id=report.patient.id) }}" 
-               class="btn btn-outline">
-              <i class="fas fa-arrow-left"></i> Back to Patient
+               class="btn btn-outline-light">
+              <i class="fas fa-arrow-left me-2"></i> Back to Patient
             </a>
           </div>
         </div>
@@ -266,79 +329,138 @@
 
     <!-- Main Content -->
     <main class="container mb-5">
-      <div class="patients-card">
-        <div class="row">
-          <!-- Report Details -->
-          <div class="col-md-8">
-            <h3 class="section-title">Report Findings</h3>
-            <div class="findings-content p-3 bg-light rounded mb-4">
+      <div class="row g-4">
+        <!-- Report Findings -->
+        <div class="col-lg-8">
+          <div class="patients-card">
+            <h3 class="section-title">
+              <i class="fas fa-search me-2"></i>Clinical Findings
+            </h3>
+            <div class="findings-content">
               {{ report.findings|replace('\n', '<br>')|safe }}
             </div>
             
-            <div class="row">
-              <div class="col-md-6">
-                <p><strong>Model Used:</strong> {{ report.model_used|upper }}</p>
+            <!-- Model Information -->
+            <div class="mt-4 d-flex justify-content-between align-items-center">
+              <div>
+                <span class="badge bg-primary">
+                  <i class="fas fa-brain me-1"></i>
+                  Model: {{ report.model_used|upper }}
+                </span>
               </div>
-              <div class="col-md-6">
-                <p><strong>Generated By:</strong> Dr. {{ report.doctor.name }}</p>
-              </div>
+              <small class="text-muted">
+                Report ID: #{{ report.id }}
+              </small>
             </div>
           </div>
           
-          <!-- Report Metadata -->
-          <div class="col-md-4">
-            <h3 class="section-title">Details</h3>
-            <div class="report-meta p-3 bg-light rounded">
-              <p><strong>Patient:</strong> {{ report.patient.name }}</p>
-              <p><strong>Contact:</strong> {{ report.patient.contact_number }}</p>
-              <p><strong>DOB:</strong> {{ report.patient.date_of_birth.strftime('%Y-%m-%d') if report.patient.date_of_birth else 'N/A' }}</p>
-              <p><strong>Report Date:</strong> {{ report.generated_on.strftime('%Y-%m-%d') }}</p>
+          <!-- Images Section -->
+          <div class="patients-card mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h3 class="section-title mb-0">
+                <i class="fas fa-images me-2"></i>Images
+              </h3>
+              <span class="badge bg-secondary">
+                {{ images|length }} image{{ 's' if images|length != 1 else '' }}
+              </span>
             </div>
-          </div>
-        </div>
-
-        <!-- Report Images -->
-        <h3 class="section-title mt-5">Images</h3>
-        {% if images %}
-        <div class="row">
-          {% for image in images %}
-          <div class="col-md-4 mb-4">
-            <div class="card h-100">
-              <img src="{{ url_for('static', filename=image.file_path.split('static/')[-1]) }}" 
-                   class="card-img-top" 
-                   style="height: 200px; object-fit: cover;">
-              <div class="card-body">
-                {% if image.analysis %}
-                <div class="analysis-result mb-2">
-                  <h5 class="mb-1">Analysis Results:</h5>
-                  <div class="d-flex align-items-center">
-                    <span class="badge bg-{{ 'success' if image.get_analysis_data().classification == 'benign' else 'danger' }} me-2">
-                      {{ image.get_analysis_data().classification|title }}
-                    </span>
-                    <small>Confidence: {{ (image.get_analysis_data().confidence * 100)|round(1) }}%</small>
+            
+            {% if images %}
+            <div class="row g-3">
+              {% for image in images %}
+              <div class="col-md-6 col-lg-4">
+                <div class="image-card h-100">
+                  <img src="{{ url_for('doctor.serve_image', filename=image.filename, patient_id=report.patient.id) }}" 
+                      class="img-fluid w-100" 
+                      style="height: 200px; object-fit: cover;">
+                  <div class="p-3">
+                    {% if image.analysis %}
+                    <div class="mb-2">
+                      <h6 class="mb-1">Analysis Results:</h6>
+                      <div class="d-flex align-items-center mb-1">
+                        <span class="badge analysis-badge bg-{{ 'success' if image.get_analysis_data().classification == 'benign' else 'danger' }} me-2">
+                          {{ image.get_analysis_data().classification|title }}
+                        </span>
+                        <small>Confidence: {{ (image.get_analysis_data().confidence * 100)|round(1) }}%</small>
+                      </div>
+                      <small class="text-muted">Model: {{ image.get_analysis_data().model_used }}</small>
+                    </div>
+                    {% endif %}
+                    <small class="text-muted d-block">
+                      <i class="far fa-clock me-1"></i>
+                      {{ image.uploaded_on.strftime('%Y-%m-%d %H:%M') }}
+                    </small>
                   </div>
-                  <small class="text-muted">Model: {{ image.get_analysis_data().model_used }}</small>
                 </div>
-                {% endif %}
-                <small class="text-muted">Uploaded: {{ image.uploaded_on.strftime('%Y-%m-%d') }}</small>
               </div>
+              {% endfor %}
+            </div>
+            {% else %}
+            <div class="empty-state py-4">
+              <i class="fas fa-image fa-3x text-muted mb-3"></i>
+              <p class="mb-0">No images associated with this report.</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        
+        <!-- Patient Metadata -->
+        <div class="col-lg-4">
+          <div class="meta-card">
+            <h3 class="section-title">
+              <i class="fas fa-user-injured me-2"></i>Patient Details
+            </h3>
+            <div class="meta-item">
+              <small class="text-muted">Full Name</small>
+              <p class="mb-0 fw-bold">{{ report.patient.name }}</p>
+            </div>
+            <div class="meta-item">
+              <small class="text-muted">Contact</small>
+              <p class="mb-0 fw-bold">{{ report.patient.contact_number }}</p>
+            </div>
+            <div class="meta-item">
+              <small class="text-muted">Date of Birth</small>
+              <p class="mb-0 fw-bold">
+                {{ report.patient.date_of_birth.strftime('%Y-%m-%d') if report.patient.date_of_birth else 'N/A' }}
+              </p>
+            </div>
+            <div class="meta-item">
+              <small class="text-muted">Gender</small>
+              <p class="mb-0 fw-bold">{{ report.patient.gender or 'N/A' }}</p>
+            </div>
+            <div class="meta-item">
+              <small class="text-muted">Report Date</small>
+              <p class="mb-0 fw-bold">{{ report.generated_on.strftime('%Y-%m-%d %H:%M') }}</p>
             </div>
           </div>
-          {% endfor %}
+          
+          <!-- Quick Actions -->
+          <div class="meta-card mt-4">
+            <h3 class="section-title">
+              <i class="fas fa-bolt me-2"></i>Quick Actions
+            </h3>
+            <div class="d-grid gap-2">
+              <a href="{{ url_for('doctor.create_report', patient_id=report.patient.id) }}" 
+                 class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>New Report
+              </a>
+              <a href="{{ url_for('doctor.view_patient', patient_id=report.patient.id) }}" 
+                 class="btn btn-outline-secondary">
+                <i class="fas fa-user me-2"></i>View Patient
+              </a>
+            </div>
+          </div>
         </div>
-        {% else %}
-        <div class="empty-state">
-          <p>No images associated with this report.</p>
-        </div>
-        {% endif %}
       </div>
     </main>
 
-    <!-- Same Footer as dashboard -->
     <footer>
       <div class="container">
         <p>&copy; 2024 MelaScan Medical Systems</p>
       </div>
     </footer>
+
+    <!-- Add Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

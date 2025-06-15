@@ -18,6 +18,12 @@ def init_services(app):
         try:
             # Initialize AI service with app context
             ai_service.init_app(app)
+            app.extensions['ai_service'] = ai_service 
+            
+            # Verify model loading
+            if 'resnet_cbam' not in ai_service.models:
+                raise RuntimeError("Failed to load primary model")
+                
             app.logger.info("AI models loaded successfully")
         except Exception as e:
             app.logger.error(f"Failed to initialize services: {str(e)}")

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from torchvision.models.resnet import Bottleneck, resnet50
+from torchvision.models import resnet50
+from torchvision.models.resnet import Bottleneck
 
 class CBAM(nn.Module):
     def __init__(self, in_channels, reduction=16, kernel_size=7):
@@ -36,11 +37,15 @@ class CBAM(nn.Module):
         return sa_out
 
 class BottleneckWithCBAM(Bottleneck):
-    def __init__(self, inplanes, planes, stride=1, downsample=None, groups=1,
-                 base_width=64, dilation=1, norm_layer=None):
-        super(BottleneckWithCBAM, self).__init__(
-            inplanes, planes, stride, downsample, groups, 
-            base_width, dilation, norm_layer)
+    def __init__(self, inplanes, planes, stride=1, downsample=None, **kwargs):
+        # Handle different PyTorch versions
+        if 'groups' in Bottleneck.__init__.__code__.co_varnames:
+            super(BottleneckWithCBAM, self).__init__(
+                inplanes, planes, stride, downsample, **kwargs)
+        else:
+            # For older PyTorch versions
+            super(BottleneckWithCBAM, self).__init__(
+                inplanes, planes, stride, downsample)
         
         # Add CBAM after the third convolution
         self.cbam = CBAM(planes * self.expansion)
@@ -70,65 +75,98 @@ class BottleneckWithCBAM(Bottleneck):
 
         return out
 
-class ResNetCBAM(nn.Module):
+def create_resnet50_cbam_selective(num_classes=2, pretrained=True):
+    """
+    Creates ResNet50 with CBAM ONLY in the first block of each layer
+    (Compatible with multiple PyTorch versions)
+    """
+    # Load base ResNet50
+    if pretrained:
+        model = resnet50(weights='IMAGENET1K_V1')
+    else:
+        model = resnet50(weights=None)
+    
+    # Replace ONLY the first block of each layer with CBAM version
+    
+    # Layer 1 - Replace block 0 only
+    original_block = model.layer1[0]
+    model.layer1[0] = BottleneckWithCBAM(
+        inplanes=64,
+        planes=64,
+        stride=1,
+        downsample=original_block.downsample
+    )
+    
+    # Layer 2 - Replace block 0 only  
+    original_block = model.layer2[0]
+    model.layer2[0] = BottleneckWithCBAM(
+        inplanes=256,
+        planes=128,
+        stride=2,
+        downsample=original_block.downsample
+    )
+    
+    # Layer 3 - Replace block 0 only
+    original_block = model.layer3[0]
+    model.layer3[0] = BottleneckWithCBAM(
+        inplanes=512,
+        planes=256,
+        stride=2,
+        downsample=original_block.downsample
+    )
+    
+    # Layer 4 - Replace block 0 only
+    original_block = model.layer4[0]
+    model.layer4[0] = BottleneckWithCBAM(
+        inplanes=1024,
+        planes=512,
+        stride=2,
+        downsample=original_block.downsample
+    )
+    
+    # Replace the final classifier
+    model.fc = nn.Linear(2048, num_classes)
+    
+    return model
+
+class ResNetCBAMSelective(nn.Module):
+    """
+    ResNet50 with CBAM matching your exact trained architecture
+    (CBAM only in first block of each layer)
+    """
     def __init__(self, num_classes=2, pretrained=True):
-        super(ResNetCBAM, self).__init__()
-        
-        # Load base ResNet50
-        self.base_model = resnet50(pretrained=pretrained)
-        
-        # Replace only the first bottleneck block in each layer with CBAM version
-        self._replace_first_bottleneck_with_cbam()
-        
-        # Modify final layer
-        in_features = self.base_model.fc.in_features
-        self.base_model.fc = nn.Linear(in_features, num_classes)
-
-    def _replace_first_bottleneck_with_cbam(self):
-        """Replace only the first bottleneck block in each layer with CBAM version"""
-        layers = {
-            'layer1': (64, self.base_model.layer1[0].stride, self.base_model.layer1[0].downsample),
-            'layer2': (128, self.base_model.layer2[0].stride, self.base_model.layer2[0].downsample),
-            'layer3': (256, self.base_model.layer3[0].stride, self.base_model.layer3[0].downsample),
-            'layer4': (512, self.base_model.layer4[0].stride, self.base_model.layer4[0].downsample)
-        }
-        
-        # Get the original first block from each layer
-        original_blocks = {
-            'layer1': self.base_model.layer1[0],
-            'layer2': self.base_model.layer2[0],
-            'layer3': self.base_model.layer3[0],
-            'layer4': self.base_model.layer4[0]
-        }
-        
-        # Replace with CBAM versions
-        self.base_model.layer1[0] = BottleneckWithCBAM(
-            original_blocks['layer1'].conv1.in_channels,
-            layers['layer1'][0],
-            stride=layers['layer1'][1],
-            downsample=layers['layer1'][2]
+        super(ResNetCBAMSelective, self).__init__()
+        self.model = create_resnet50_cbam_selective(
+            num_classes=num_classes,
+            pretrained=pretrained
         )
-        
-        self.base_model.layer2[0] = BottleneckWithCBAM(
-            original_blocks['layer2'].conv1.in_channels,
-            layers['layer2'][0],
-            stride=layers['layer2'][1],
-            downsample=layers['layer2'][2]
-        )
-        
-        self.base_model.layer3[0] = BottleneckWithCBAM(
-            original_blocks['layer3'].conv1.in_channels,
-            layers['layer3'][0],
-            stride=layers['layer3'][1],
-            downsample=layers['layer3'][2]
-        )
-        
-        self.base_model.layer4[0] = BottleneckWithCBAM(
-            original_blocks['layer4'].conv1.in_channels,
-            layers['layer4'][0],
-            stride=layers['layer4'][1],
-            downsample=layers['layer4'][2]
-        )
-
+    
     def forward(self, x):
-        return self.base_model(x)
+        return self.model(x)
+
+def load_model_weights(model, weight_path, device='cpu'):
+    """
+    Robust weight loading with version compatibility
+    """
+    try:
+        checkpoint = torch.load(weight_path, map_location=device)
+        
+        # Handle different checkpoint formats
+        if isinstance(checkpoint, dict):
+            state_dict = checkpoint.get('model_state_dict', checkpoint.get('state_dict', checkpoint))
+        else:
+            state_dict = checkpoint
+        
+        # Clean state dict keys
+        cleaned_state_dict = {}
+        for k, v in state_dict.items():
+            name = k.replace('module.', '')  # Remove DataParallel prefix
+            cleaned_state_dict[name] = v
+        
+        # Load with strict=False to handle partial matches
+        model.load_state_dict(cleaned_state_dict, strict=False)
+        return True
+        
+    except Exception as e:
+        print(f"Error loading weights: {str(e)}")
+        return False

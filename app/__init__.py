@@ -37,7 +37,8 @@ def create_app():
         ALLOWED_EXTENSIONS={'pdf', 'png', 'jpg', 'jpeg'},
         
         # AI Model Configuration
-        RESNET_CBAM_PATH=os.path.join(basedir, os.getenv('RESNET_CBAM_PATH')),
+        # In app/__init__.py, modify the path joining:
+        RESNET_CBAM_PATH=os.path.join(basedir, *os.getenv('RESNET_CBAM_PATH').split('/')),
         EFFICIENTNET_PATH=os.path.join(basedir, os.getenv('EFFICIENTNET_PATH')),
         DENSENET_PATH=os.path.join(basedir, os.getenv('DENSENET_PATH')),
         RESNET_CBAM_CLASS=os.getenv('RESNET_CBAM_CLASS'),
