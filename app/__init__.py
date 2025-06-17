@@ -38,7 +38,7 @@ def create_app():
         
         # AI Model Configuration
         # In app/__init__.py, modify the path joining:
-        RESNET_CBAM_PATH=os.path.join(basedir, *os.getenv('RESNET_CBAM_PATH').split('/')),
+        RESNET_CBAM_PATH=os.path.abspath(os.path.join(basedir, os.getenv('RESNET_CBAM_PATH'))),
         EFFICIENTNET_PATH=os.path.join(basedir, os.getenv('EFFICIENTNET_PATH')),
         DENSENET_PATH=os.path.join(basedir, os.getenv('DENSENET_PATH')),
         RESNET_CBAM_CLASS=os.getenv('RESNET_CBAM_CLASS'),

@@ -15,6 +15,22 @@ class PDFGenerator:
             pdf.set_auto_page_break(auto=True, margin=15)
             pdf.add_page()
             
+            # Verify reports directory exists and is writable
+            pdf_dir = os.path.join(
+                current_app.config['UPLOAD_FOLDERS']['reports'], 
+                str(report.patient_id))
+            
+            os.makedirs(pdf_dir, exist_ok=True)
+            
+            # Test directory writability
+            test_file = os.path.join(pdf_dir, 'test.tmp')
+            try:
+                with open(test_file, 'w') as f:
+                    f.write('test')
+                os.remove(test_file)
+            except IOError as e:
+                raise IOError(f"Cannot write to reports directory: {str(e)}")
+            
             # Set document properties
             pdf.set_title(f"Medical Report #{report.id}")
             pdf.set_author("MelaScan System")
@@ -36,22 +52,19 @@ class PDFGenerator:
             # Add footer
             PDFGenerator._add_footer(pdf)
             
-            # Ensure reports directory exists
-            pdf_dir = os.path.join(current_app.config['UPLOAD_FOLDERS']['reports'], str(report.patient_id))
-            os.makedirs(pdf_dir, exist_ok=True)
-            
-            # Save PDF
-            pdf_path = os.path.join(pdf_dir, f'report_{report.id}.pdf')
+            # Save PDF with absolute path
+            pdf_path = os.path.abspath(os.path.join(pdf_dir, f'report_{report.id}.pdf'))
             pdf.output(pdf_path)
             
             return pdf_path
             
         except Exception as e:
-            current_app.logger.error(f"Error generating PDF: {str(e)}")
-            raise
+            current_app.logger.error(f"PDF Generation Error: {str(e)}", exc_info=True)
+            raise ValueError(f"Failed to generate PDF: {str(e)}")
 
     @staticmethod
     def _add_header(pdf, report):
+        """Add header section to the PDF"""
         # Add logo
         logo_path = os.path.join(current_app.root_path, 'static/images/logo.png')
         if os.path.exists(logo_path):
@@ -79,6 +92,7 @@ class PDFGenerator:
 
     @staticmethod
     def _add_patient_info(pdf, report):
+        """Add patient information section"""
         pdf.set_font('Helvetica', 'B', 12)
         pdf.set_fill_color(240, 240, 240)
         pdf.cell(0, 8, 'PATIENT INFORMATION', 0, 1, 'L', 1)
@@ -102,13 +116,14 @@ class PDFGenerator:
 
     @staticmethod
     def _add_findings(pdf, report):
+        """Add clinical findings section"""
         pdf.set_font('Helvetica', 'B', 12)
         pdf.set_fill_color(240, 240, 240)
         pdf.cell(0, 8, 'CLINICAL FINDINGS', 0, 1, 'L', 1)
         pdf.ln(2)
         
         pdf.set_font('Helvetica', '', 10)
-        pdf.multi_cell(0, 6, report.findings)
+        pdf.multi_cell(0, 6, report.findings or "No findings reported")
         pdf.ln(8)
         
         # Model information
@@ -118,6 +133,7 @@ class PDFGenerator:
 
     @staticmethod
     def _add_image_analysis(pdf, images, model_used):
+        """Add image analysis section"""
         pdf.set_font('Helvetica', 'B', 12)
         pdf.set_fill_color(240, 240, 240)
         pdf.cell(0, 8, 'IMAGE ANALYSIS', 0, 1, 'L', 1)
@@ -192,6 +208,7 @@ class PDFGenerator:
 
     @staticmethod
     def _add_footer(pdf):
+        """Add footer to each page"""
         pdf.set_y(-15)
         pdf.set_font('Helvetica', 'I', 8)
         pdf.set_text_color(128, 128, 128)

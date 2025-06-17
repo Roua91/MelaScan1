@@ -10,13 +10,18 @@ from flask_wtf import FlaskForm
 import json
 from app.services.ai_service import ai_service
 from app.services.pdf_generator import PDFGenerator
+import traceback
+
 
 doctor_bp = Blueprint('doctor', __name__, url_prefix='/doctor')
 
+
 def get_doctor_clinics():
+    """Get list of clinic IDs assigned to the current doctor"""
     return [ua.clinic_id for ua in current_user.clinic_assignments]
 
 def allowed_file(filename):
+    """Check if file extension is allowed"""
     return '.' in filename and \
         filename.rsplit('.', 1)[1].lower() in {'png', 'jpg', 'jpeg', 'gif'}
 
@@ -78,6 +83,24 @@ def view_patient(patient_id):
                         reports=reports,
                         images=images)
 
+@doctor_bp.route('/debug/model')
+@login_required
+def debug_model():
+    model = ai_service.models.get('resnet_cbam')
+    if not model:
+        return jsonify({"error": "Model not loaded"}), 500
+    
+    # Check first conv layer weights
+    conv1_weight = model.resnet.conv1.weight.data.cpu().numpy()
+    fc_weight = model.resnet.fc.weight.data.cpu().numpy()
+    
+    return jsonify({
+        "conv1_mean": float(conv1_weight.mean()),
+        "conv1_std": float(conv1_weight.std()),
+        "fc_mean": float(fc_weight.mean()),
+        "fc_std": float(fc_weight.std()),
+        "device": str(next(model.parameters()).device)
+    })
 
 @doctor_bp.route('/api/analyze_image', methods=['POST'])
 @login_required
@@ -168,9 +191,12 @@ def model_info():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
     
+
+
 @doctor_bp.route('/reports/create/<int:patient_id>', methods=['GET', 'POST'])
 @login_required
 def create_report(patient_id):
+    """Create a new report for a patient"""
     clinic_ids = get_doctor_clinics()
     patient = Patient.query.join(
         PatientClinicMap
@@ -181,41 +207,63 @@ def create_report(patient_id):
 
     if request.method == 'POST':
         try:
-            # Create report first
+            # Validate required fields
+            if not request.form.get('findings'):
+                flash('Findings field is required', 'danger')
+                return redirect(url_for('doctor.create_report', patient_id=patient_id))
+
+            # Create report
             report = Report(
                 patient_id=patient_id,
                 doctor_id=current_user.id,
                 findings=request.form['findings'],
-                model_used=request.form.get('model', 'resnet_cbam')
+                model_used=request.form.get('model', 'resnet_cbam'),
+                generated_on=datetime.utcnow()
             )
             db.session.add(report)
-            db.session.flush()  # Get the report ID
+            db.session.flush()  # Get report ID before committing
 
             # Handle image uploads
             upload_dir = os.path.join(
                 current_app.config['UPLOAD_FOLDERS']['patient_images'],
                 str(patient_id)
             )
-            # Create directory if it doesn't exist
-            if not os.path.exists(upload_dir):
-                os.makedirs(upload_dir)
+            os.makedirs(upload_dir, exist_ok=True)
 
-            # Process each uploaded file
+            saved_images = []
             for file in request.files.getlist('images'):
                 if file and allowed_file(file.filename):
-                    filename = secure_filename(file.filename)
+                    # Generate unique filename
+                    filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
                     filepath = os.path.join(upload_dir, filename)
+                    
+                    # Save file
                     file.save(filepath)
-
+                    
                     # Create image record
                     image = Image(
                         patient_id=patient_id,
                         report_id=report.id,
                         filename=filename,
                         file_path=filepath,
-                        uploaded_by=current_user.id
+                        uploaded_by=current_user.id,
+                        uploaded_on=datetime.utcnow()
                     )
                     db.session.add(image)
+                    saved_images.append(filename)
+
+            if not saved_images:
+                raise ValueError("At least one valid image is required")
+
+            # Generate PDF report
+            try:
+                images = Image.query.filter_by(report_id=report.id).all()
+                pdf_path = PDFGenerator.generate_report_pdf(report, images)
+                report.pdf_path = pdf_path
+                current_app.logger.info(f"PDF report generated successfully at: {pdf_path}")
+            except Exception as pdf_error:
+                current_app.logger.error(f"PDF generation failed: {str(pdf_error)}")
+                flash('Report saved but PDF generation failed', 'warning')
 
             db.session.commit()
             flash('Report created successfully!', 'success')
@@ -223,8 +271,8 @@ def create_report(patient_id):
 
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Report creation error: {str(e)}")
-            flash(f'Error: {str(e)}', 'danger')
+            current_app.logger.error(f"Report creation error: {str(e)}", exc_info=True)
+            flash(f'Error creating report: {str(e)}', 'danger')
 
     return render_template('doctor/create_report.html', 
                         patient=patient,
@@ -233,15 +281,14 @@ def create_report(patient_id):
 @doctor_bp.route('/reports/save/<int:patient_id>', methods=['POST'])
 @login_required
 def save_report(patient_id):
+    """Save report (API endpoint for AJAX submissions)"""
     form = FlaskForm()  # For CSRF validation
     
     # Validate CSRF first
     if not form.validate_on_submit():
         error_msg = 'CSRF token missing or invalid'
-        if request.is_json:
-            return jsonify({'success': False, 'message': error_msg}), 400
-        flash(error_msg, 'danger')
-        return redirect(url_for('doctor.create_report', patient_id=patient_id))
+        current_app.logger.warning(error_msg)
+        return jsonify({'success': False, 'message': error_msg}), 400
     
     try:
         # Verify patient access
@@ -271,15 +318,21 @@ def save_report(patient_id):
             current_app.config['UPLOAD_FOLDERS']['patient_images'],
             str(patient_id)
         )
+
+        # Create the directory if it doesn't exist
         os.makedirs(upload_dir, exist_ok=True)
 
         saved_images = []
         for file in request.files.getlist('images'):
             if file and allowed_file(file.filename):
+                # Generate unique filename
                 filename = f"{uuid.uuid4().hex}_{secure_filename(file.filename)}"
                 filepath = os.path.join(upload_dir, filename)
+                
+                # Save file
                 file.save(filepath)
-
+                
+                # Create image record
                 image = Image(
                     patient_id=patient_id,
                     report_id=report.id,
@@ -294,44 +347,40 @@ def save_report(patient_id):
         if not saved_images:
             raise ValueError("At least one valid image is required")
 
-        db.session.commit()
-
         # Generate PDF report
         try:
-            pdf_path = PDFGenerator.generate_report(report)
+            images = Image.query.filter_by(report_id=report.id).all()
+            pdf_path = PDFGenerator.generate_report_pdf(report, images)
             report.pdf_path = pdf_path
-            db.session.commit()
+            current_app.logger.info(f"PDF report generated successfully at: {pdf_path}")
         except Exception as pdf_error:
             current_app.logger.error(f"PDF generation failed: {str(pdf_error)}")
+            db.session.rollback()
+            raise ValueError(f"Report saved but PDF generation failed: {str(pdf_error)}")
 
-        # Return response based on request type
-        response_data = {
+        db.session.commit()
+
+        return jsonify({
             'success': True,
             'report_id': report.id,
+            'pdf_path': report.pdf_path,
             'redirect': url_for('doctor.view_patient', patient_id=patient_id)
-        }
-
-        if request.is_json:
-            return jsonify(response_data)
-        
-        flash('Report saved successfully!', 'success')
-        return redirect(response_data['redirect'])
+        })
 
     except Exception as e:
         db.session.rollback()
         error_msg = str(e)
-        current_app.logger.error(f"Report save failed: {error_msg}")
-        
-        if request.is_json:
-            return jsonify({'success': False, 'message': error_msg}), 400
-        
-        flash(f'Error: {error_msg}', 'danger')
-        return redirect(url_for('doctor.create_report', patient_id=patient_id))
-    
+        current_app.logger.error(f"Report save failed: {error_msg}", exc_info=True)
+        return jsonify({
+            'success': False, 
+            'message': error_msg,
+            'error_type': 'pdf_generation' if 'PDF' in error_msg else 'general'
+        }), 400
+
 @doctor_bp.route('/reports/<int:report_id>')
 @login_required
 def view_report(report_id):
-    # Get report with patient and doctor info
+    """View a specific report"""
     report = Report.query.options(
         db.joinedload(Report.patient),
         db.joinedload(Report.doctor)
@@ -340,7 +389,6 @@ def view_report(report_id):
         doctor_id=current_user.id
     ).first_or_404()
     
-    # Get associated images
     images = Image.query.filter_by(report_id=report_id).all()
     
     return render_template('doctor/view_report.html',
@@ -350,14 +398,23 @@ def view_report(report_id):
 @doctor_bp.route('/reports/<int:report_id>/download')
 @login_required
 def download_report(report_id):
+    """Download PDF version of a report"""
     report = Report.query.filter_by(
         id=report_id,
         doctor_id=current_user.id
     ).first_or_404()
     
+    # Regenerate PDF if missing or corrupted
     if not report.pdf_path or not os.path.exists(report.pdf_path):
-        report.generate_pdf()
-        db.session.commit()
+        try:
+            images = Image.query.filter_by(report_id=report_id).all()
+            pdf_path = PDFGenerator.generate_report_pdf(report, images)
+            report.pdf_path = pdf_path
+            db.session.commit()
+        except Exception as e:
+            current_app.logger.error(f"PDF regeneration failed: {str(e)}")
+            flash('Could not generate PDF report', 'danger')
+            return redirect(url_for('doctor.view_report', report_id=report_id))
     
     return send_from_directory(
         os.path.dirname(report.pdf_path),
@@ -365,6 +422,8 @@ def download_report(report_id):
         as_attachment=True,
         mimetype='application/pdf'
     )
+
+
     
 @doctor_bp.route('/images/<int:patient_id>/<filename>')
 @login_required

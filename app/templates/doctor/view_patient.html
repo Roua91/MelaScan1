@@ -229,6 +229,66 @@
       text-align: center;
       margin-top: auto;
     }
+    
+    .image-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 15px 0;
+    }
+
+    .card-img-wrapper {
+      height: 150px;
+      overflow: hidden;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+    }
+
+    .card-img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-meta {
+      padding: 10px;
+      background: white;
+      border-radius: 0 0 var(--radius-md) var(--radius-md);
+      text-align: center;
+    }
+
+    .image-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      padding: 20px 0;
+    }
+
+    .image-card {
+      width: 200px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-light);
+      transition: transform 0.3s ease;
+    }
+
+    .image-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .image-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+
+    .image-meta {
+      padding: 10px;
+      background: white;
+      text-align: center;
+    }
     </style>
 </head>
 <body>
@@ -275,19 +335,6 @@
               <p><strong>Gender:</strong> {{ patient.gender or 'N/A' }}</p>
               <p><strong>Registered:</strong> {{ patient.date_created.strftime('%Y-%m-%d') }}</p>
             </div>
-          </div>
-
-          <!-- Image Upload -->
-          <div class="patients-card mt-4">
-            <h3 class="section-title">Upload Images</h3>
-            <form method="POST" action="{{ url_for('doctor.upload_image', patient_id=patient.id) }}" enctype="multipart/form-data">
-              <div class="mb-3">
-                <input type="file" class="form-control" name="images" multiple accept="image/*">
-              </div>
-              <button type="submit" class="btn btn-primary w-100">
-                <i class="fas fa-upload"></i> Upload
-              </button>
-            </form>
           </div>
         </div>
 
@@ -343,27 +390,30 @@
             <h3 class="section-title">Images</h3>
             
             {% if images %}
-            <div class="row">
-              {% for image in images %}
-              <div class="col-md-4 mb-3">
-                <div class="card">
-                  <img src="{{ url_for('doctor.serve_image', filename=image.filename, patient_id=patient.id) }}"
-                       class="card-img-top" 
-                       style="height: 150px; object-fit: cover;">
-                  <div class="card-body p-2">
-                    <small class="text-muted">{{ image.uploaded_on.strftime('%Y-%m-%d') }}</small>
-                    {% if image.analysis %}
-                    <div class="mt-1">
-                      <span class="badge bg-{{ 'success' if image.get_analysis_data().classification == 'benign' else 'danger' }}">
-                        {{ image.get_analysis_data().classification|title }}
-                      </span>
-                      <small class="text-muted ms-1">{{ (image.get_analysis_data().confidence * 100)|round(1) }}%</small>
+            <div class="container">
+              <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 g-4 justify-content-center">
+                {% for image in images %}
+                <div class="col d-flex justify-content-center">
+                  <div class="card h-100" style="width: 200px;">
+                    <div class="card-img-top" style="height: 150px; overflow: hidden;">
+                      <img src="{{ url_for('doctor.serve_image', filename=image.filename, patient_id=patient.id) }}"
+                          style="width: 100%; height: 100%; object-fit: cover;">
                     </div>
-                    {% endif %}
+                    <div class="card-body text-center p-2">
+                      <small class="text-muted">{{ image.uploaded_on.strftime('%Y-%m-%d') }}</small>
+                      {% if image.analysis %}
+                      <div class="mt-1">
+                        <span class="badge bg-{{ 'success' if image.get_analysis_data().classification == 'benign' else 'danger' }}">
+                          {{ image.get_analysis_data().classification|title }}
+                        </span>
+                        <small class="text-muted ms-1">{{ (image.get_analysis_data().confidence * 100)|round(1) }}%</small>
+                      </div>
+                      {% endif %}
+                    </div>
                   </div>
                 </div>
+                {% endfor %}
               </div>
-              {% endfor %}
             </div>
             {% else %}
             <div class="empty-state">
@@ -371,7 +421,6 @@
             </div>
             {% endif %}
           </div>
-        </div>
       </div>
     </main>
 
@@ -385,7 +434,3 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
-
-
-
-    
