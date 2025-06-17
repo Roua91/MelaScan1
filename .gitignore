@@ -20,3 +20,4 @@ uploads/
 
 app/static/css/view_patient.css
 app/static/css/view_patient.css
+app/modelai/resnet_cbam.pth
