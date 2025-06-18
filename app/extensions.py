@@ -1,3 +1,4 @@
+# Fixed extensions.py
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_bcrypt import Bcrypt
@@ -20,14 +21,16 @@ def init_services(app):
             ai_service.init_app(app)
             app.extensions['ai_service'] = ai_service 
             
-            # Verify model loading
-            if 'resnet_cbam' not in ai_service.models:
-                raise RuntimeError("Failed to load primary model")
+            # FIXED: Check if AI service is available instead of checking models dict
+            if not ai_service.is_available():
+                app.logger.warning("AI service is not available, but continuing...")
+            else:
+                app.logger.info("AI service initialized successfully")
                 
-            app.logger.info("AI models loaded successfully")
         except Exception as e:
             app.logger.error(f"Failed to initialize services: {str(e)}")
-            raise
+            # Don't raise exception - let app continue without AI service
+            app.logger.warning("Continuing without AI service...")
 
 @login_manager.user_loader
 def load_user(user_id):

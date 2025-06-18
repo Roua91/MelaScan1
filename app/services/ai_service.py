@@ -1,169 +1,188 @@
-import os
 import torch
 from PIL import Image
 from torchvision import transforms
+import os
+import logging
 from flask import current_app
-from app.modelai.resnet_cbam import ResNetCBAMSelective, load_model_weights
 
-class AIModelService:
-    def __init__(self):
-        self.models = {}
-        self.device = None
-        self.app = None
-    
-    def init_app(self, app):
-        """Initialize service with Flask app"""
+class AIService:
+    def __init__(self, app=None):
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = None
+        self.transform = None
+        self.model_loaded = False
         self.app = app
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.load_models()
-    
-    def load_models(self):
+        
+        if app is not None:
+            self._initialize()
+
+    def init_app(self, app):
+        """Initialize with Flask app context"""
+        self.app = app
+        self._initialize()
+
+    def _initialize(self):
+        """Initialize the AI service components"""
         try:
-            model_path = os.path.normpath(self.app.config['RESNET_CBAM_PATH'])
-            
-            if not os.path.exists(model_path):
-                raise FileNotFoundError(f"Model weights not found at {model_path}")
-            
-            # Use your updated model class
-            model = ResNetCBAMSelective(num_classes=2, pretrained=False)
-            
-            # Load weights with your helper function
-            if not load_model_weights(model, model_path, self.device):
-                raise ValueError("Failed to load model weights")
-            
-            model.eval()
-            model.to(self.device)
-            
-            # Validate model loading
-            self._validate_model_loading(model)
-            
-            self.models['resnet_cbam'] = model
-            current_app.logger.info(f"Updated ResNet50-CBAM model loaded successfully on {self.device}")
-            
+            self._init_transform()
+            self._load_model()
         except Exception as e:
-            current_app.logger.error(f"Failed to load model: {str(e)}")
-            raise
-    
-    def _map_state_dict_keys(self, saved_state_dict, model_state_dict):
-        """Map saved state dict keys to current model structure"""
-        mapped_dict = {}
-        model_keys = list(model_state_dict.keys())
-        saved_keys = list(saved_state_dict.keys())
-        
-        # Try to match keys
-        for model_key in model_keys:
-            # Direct match
-            if model_key in saved_state_dict:
-                mapped_dict[model_key] = saved_state_dict[model_key]
-            # Try with 'model.' prefix
-            elif f"model.{model_key}" in saved_state_dict:
-                mapped_dict[model_key] = saved_state_dict[f"model.{model_key}"]
-            # Try without 'model.' prefix if current key has it
-            elif model_key.startswith('model.') and model_key[6:] in saved_state_dict:
-                mapped_dict[model_key] = saved_state_dict[model_key[6:]]
-        
-        return mapped_dict
-    
-    def _validate_model_loading(self, model):
-        """Validate that the model was loaded correctly"""
+            self._log_error(f"AI Service initialization failed: {str(e)}")
+            self.model_loaded = False
+
+    def _log_error(self, message):
+        """Log errors with app context if available"""
         try:
-            # Test with different types of inputs
-            test_inputs = [
-                torch.zeros(1, 3, 224, 224),    # Black image
-                torch.ones(1, 3, 224, 224),     # White image  
-                torch.randn(1, 3, 224, 224),    # Random noise
-            ]
-            
-            results = []
-            for i, test_input in enumerate(test_inputs):
-                test_input = test_input.to(self.device)
-                with torch.no_grad():
-                    output = model(test_input)
-                    probs = torch.nn.functional.softmax(output, dim=1)
-                    results.append(probs.cpu().numpy()[0])
-                    current_app.logger.info(f"Test input {i+1} - Raw output: {output.cpu().numpy()[0]}, Probabilities: {probs.cpu().numpy()[0]}")
-            
-            # Check if model is giving varied outputs (not stuck)
-            prob_variations = [abs(r[0] - r[1]) for r in results]
-            if all(var < 0.01 for var in prob_variations):  # All outputs very similar
-                current_app.logger.warning("Model may not be loaded correctly - all test outputs are very similar")
-            
-            return results
-            
-        except Exception as e:
-            current_app.logger.error(f"Model validation failed: {str(e)}")
-            raise
-    
-    def analyze_image(self, image_path, model_name='resnet_cbam'):
-        """Analyze an image using the specified model"""
-        if model_name not in self.models:
-            raise ValueError(f"Model {model_name} not loaded")
-        
+            if self.app and hasattr(self.app, 'logger'):
+                self.app.logger.error(message)
+            else:
+                logging.error(message)
+        except (RuntimeError, AttributeError):
+            logging.error(message)
+
+    def _log_info(self, message):
+        """Log info with app context if available"""
         try:
-            # Use the exact same preprocessing as training
-            preprocess = transforms.Compose([
-                transforms.Resize(256),           # Resize to 256x256
-                transforms.CenterCrop(224),       # Center crop to 224x224
-                transforms.ToTensor(),
-                transforms.Normalize(mean=[0.485, 0.456, 0.406], 
-                                   std=[0.229, 0.224, 0.225]),
-            ])
+            if self.app and hasattr(self.app, 'logger'):
+                self.app.logger.info(message)
+            else:
+                logging.info(message)
+        except (RuntimeError, AttributeError):
+            logging.info(message)
+
+    def _init_transform(self):
+        """Initialize image transformation pipeline"""
+        self.transform = transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        ])
+        self._log_info("Image transform initialized")
+
+    def _load_model(self):
+        try:
+            # FIXED: Import os module
+            import os
+            # FIXED: Use direct import path
+            from app.modelai.resnet import MelanomaResNet
             
-            img = Image.open(image_path).convert('RGB')
-            img_tensor = preprocess(img).unsqueeze(0).to(self.device)
-            
-            # Get prediction
-            with torch.no_grad():
-                outputs = self.models[model_name](img_tensor)
-                probabilities = torch.nn.functional.softmax(outputs, dim=1)
-                confidence, preds = torch.max(probabilities, 1)
+            # Get weights path from config or use default
+            weights_path = None
+            if self.app and 'RESNET_PATH' in self.app.config:
+                weights_path = self.app.config['RESNET_PATH']
+                if weights_path and not os.path.exists(weights_path):
+                    self._log_info(f"Custom weights not found at {weights_path}, using base ResNet50")
+                    weights_path = None
+            else:
+                self._log_info("No weights path configured, using base ResNet50")
                 
-                # Enhanced logging
-                current_app.logger.info(f"Image analysis - Raw outputs: {outputs.cpu().numpy()[0]}")
-                current_app.logger.info(f"Probabilities: {probabilities.cpu().numpy()[0]}")
-                current_app.logger.info(f"Predicted class: {preds.item()}, Confidence: {confidence.item()}")
+            self.model = MelanomaResNet(weights_path=weights_path).to(self.device)
+            self.model.eval()
+            self.model_loaded = True
+            self._log_info(f"ResNet model loaded successfully on {self.device}")
             
-            # Remove the problematic threshold logic - trust the model's prediction
-            predicted_class = preds.item()
-            class_names = ['benign', 'malignant']
+        except Exception as e:
+            self._log_error(f"Failed to load model: {str(e)}")
+            self.model_loaded = False
             
-            # Get individual class probabilities
-            benign_prob = probabilities[0][0].item()
-            malignant_prob = probabilities[0][1].item()
+
+    def is_available(self):
+        """Check if AI service is available"""
+        return self.model_loaded and self.model is not None and self.transform is not None
+
+    def preprocess_image(self, image_path):
+        """Preprocess image for model input"""
+        if not self.is_available():
+            raise RuntimeError("AI service is not available")
+            
+        img = Image.open(image_path).convert('RGB')
+        return self.transform(img).unsqueeze(0).to(self.device)
+            
+    def predict(self, image_tensor):
+        """Run prediction on preprocessed image tensor"""
+        if not self.is_available():
+            raise RuntimeError("AI service is not available")
+            
+        with torch.no_grad():
+            output = self.model(image_tensor)
+            prob = torch.sigmoid(output).item()
+            
+            # Simple classification
+            if prob > 0.5:
+                classification = 'malignant'
+                confidence = prob
+            else:
+                classification = 'benign'
+                confidence = 1 - prob
+                
+            return {
+                'classification': classification,
+                'confidence': confidence,
+                'probabilities': {
+                    'benign': 1 - prob,
+                    'malignant': prob
+                }
+            }
+            
+    def analyze_image(self, image_path, model_name='resnet'):
+        """Complete image analysis pipeline"""
+        try:
+            if not self.is_available():
+                return {
+                    'status': 'error',
+                    'message': 'AI service is not available'
+                }
+                
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"Image not found at {image_path}")
+                
+            image_tensor = self.preprocess_image(image_path)
+            prediction = self.predict(image_tensor)
             
             return {
-                'classification': class_names[predicted_class],
-                'confidence': confidence.item(),
-                'model_used': model_name,
-                'probabilities': {
-                    'benign': benign_prob,
-                    'malignant': malignant_prob
-                },
-                'raw_probabilities': probabilities.tolist()[0],
-                'predicted_class_index': predicted_class
+                'status': 'success',
+                'analysis': {
+                    'classification': prediction['classification'],
+                    'confidence': prediction['confidence'],
+                    'probabilities': prediction['probabilities'],
+                    'model_used': 'ResNet50',
+                    'model_version': '1.0'
+                }
             }
             
         except Exception as e:
-            current_app.logger.error(f"Error analyzing image: {str(e)}")
-            raise
+            self._log_error(f"Image analysis failed: {str(e)}")
+            return {
+                'status': 'error',
+                'message': str(e)
+            }
+            
+    def get_model_info(self, model_name='resnet'):
+        """Get information about the AI model"""
+        if not self.is_available():
+            return {
+                'status': 'unavailable',
+                'message': 'AI service is not available'
+            }
+            
+        try:
+            total_params = sum(p.numel() for p in self.model.parameters())
+            trainable_params = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+            
+            return {
+                'status': 'available',
+                'total_parameters': f"{total_params:,}",
+                'trainable_parameters': f"{trainable_params:,}",
+                'device': str(self.device),
+                'model_type': 'ResNet50',
+                'weights_loaded': getattr(self.model, 'weights_loaded', False)
+            }
+        except Exception as e:
+            return {
+                'status': 'error',
+                'message': str(e)
+            }
 
-    def get_model_info(self, model_name='resnet_cbam'):
-        """Get information about the loaded model"""
-        if model_name not in self.models:
-            return {"error": "Model not loaded"}
-        
-        model = self.models[model_name]
-        total_params = sum(p.numel() for p in model.parameters())
-        trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-        
-        return {
-            'total_parameters': total_params,
-            'trainable_parameters': trainable_params,
-            'device': str(self.device),
-            'model_loaded': True
-        }
-        
-
-
-# Singleton instance
-ai_service = AIModelService()
+# Create global instance
+ai_service = AIService()

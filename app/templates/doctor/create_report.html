@@ -302,139 +302,182 @@
     </div>
 
     <script>
-        function showGlobalLoader(text = 'Processing Analysis') {
-            document.getElementById('loadingText').textContent = text;
-            document.getElementById('globalLoader').style.display = 'flex';
-        }
+    $(document).ready(function() {
+        let uploadedImages = [];
+        let analysisResults = {};
 
-        function hideGlobalLoader() {
-            document.getElementById('globalLoader').style.display = 'none';
-        }
+        // File upload handler
+        $('#uploadButton').click(function() {
+            $('#imageUpload').click();
+        });
 
-        document.getElementById('imageUpload').addEventListener('change', function(e) {
+        $('#imageUpload').change(function(e) {
             const files = Array.from(e.target.files);
-            const validFiles = files.filter(file => {
-                const validTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-                const maxSize = 5 * 1024 * 1024;
-                if (!validTypes.includes(file.type)) {
-                    alert(`Unsupported file type: ${file.name}. Please upload JPG or PNG files.`);
-                    return false;
+            files.forEach(file => {
+                if (file.type.startsWith('image/')) {
+                    const imageId = 'img-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
+                    uploadedImages.push({
+                        id: imageId,
+                        file: file,
+                        analyzed: false
+                    });
+                    displayImagePreview(file, imageId);
                 }
-                if (file.size > maxSize) {
-                    alert(`File too large: ${file.name}. Maximum size is 5MB.`);
-                    return false;
-                }
-                return true;
             });
-            validFiles.forEach(file => {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const tempId = 'img-' + Math.random().toString(36).substr(2, 9);
-                    const preview = document.createElement('div');
-                    preview.className = 'image-card';
-                    preview.id = tempId;
-                    preview.innerHTML = `
-                        <img src="${e.target.result}" alt="${file.name}">
+        });
+
+        // Display image preview
+        function displayImagePreview(file, imageId) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const imageCard = `
+                    <div class="image-card" data-image-id="${imageId}">
+                        <img src="${e.target.result}" alt="Preview">
                         <div class="image-actions">
-                            <button type="button" class="btn btn-delete" onclick="removeImage('${tempId}')">
+                            <button type="button" class="btn btn-analyze" onclick="analyzeImage('${imageId}')">
+                                <i class="fas fa-brain"></i> Analyze
+                            </button>
+                            <button type="button" class="btn btn-delete" onclick="deleteImage('${imageId}')">
                                 <i class="fas fa-trash"></i> Delete
                             </button>
-                            <button type="button" class="btn-analyze" onclick="analyzeImage('${tempId}')">
-                                <i class="fas fa-search"></i> Analyze
-                            </button>
                         </div>
-                        <div class="analysis-result" id="${tempId}-analysis" style="display:none"></div>
-                    `;
-                    document.getElementById('imagePreviews').appendChild(preview);
-                    file.tempId = tempId;
-                    window.uploadedFiles = window.uploadedFiles || {};
-                    window.uploadedFiles[tempId] = file;
-                };
-                reader.readAsDataURL(file);
-            });
-        });
-
-        async function analyzeImage(id) {
-            const file = window.uploadedFiles[id];
-            if (!file) return;
-            const model = document.querySelector('input[name="model"]:checked').value;
-            const analysisDiv = document.getElementById(`${id}-analysis`);
-            analysisDiv.style.display = 'block';
-            showGlobalLoader('Analyzing image...');
-            try {
-                const formData = new FormData();
-                formData.append('image', file);
-                formData.append('model', model);
-                const response = await fetch("{{ url_for('doctor.analyze_image_api') }}", {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                    }
-                });
-                const data = await response.json();
-                if (data.status === 'success') {
-                    analysisDiv.innerHTML = `
-                        <div class="p-2">
-                            <p class="mb-1"><strong>Result:</strong> 
-                                <span class="badge ${data.analysis.classification === 'benign' ? 'bg-success' : 'bg-danger'}">
-                                    ${data.analysis.classification.toUpperCase()}
-                                </span>
-                                <span class="badge bg-info ms-2">
-                                    ${(data.analysis.classification === 'benign' 
-                                    ? (data.analysis.probabilities.benign * 100).toFixed(1)
-                                    : (data.analysis.probabilities.malignant * 100).toFixed(1))}%
-                                </span>
-                            </p>
-                            <p class="small mb-0"><i class="fas fa-microscope me-1"></i> Model: ${data.analysis.model_used}</p>
-                        </div>
-                    `;
-                    file.analysis = data.analysis;
-                } else {
-                    throw new Error(data.message || 'Analysis failed');
-                }
-            } catch (error) {
-                analysisDiv.innerHTML = `
-                    <div class="alert alert-danger p-2 m-0">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        <strong>Analysis Error:</strong> ${error.message}
-                        ${error.response?.data?.details ? `<div class="mt-1 small">${error.response.data.details}</div>` : ''}
+                        <div class="analysis-result" id="result-${imageId}" style="display: none;"></div>
                     </div>
                 `;
-            } finally {
-                hideGlobalLoader();
-            }
+                $('#imagePreviews').append(imageCard);
+            };
+            reader.readAsDataURL(file);
         }
 
-        document.getElementById('reportForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            showGlobalLoader('Saving report...');
-            const form = e.target;
-            const formData = new FormData(form);
-            if (!formData.has('csrf_token')) {
-                const csrfToken = document.querySelector('input[name="csrf_token"]').value;
-                formData.append('csrf_token', csrfToken);
-            }
-            try {
-                const response = await fetch(form.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-CSRFToken': document.querySelector('input[name="csrf_token"]').value
+        // Analyze single image
+        window.analyzeImage = function(imageId) {
+            const imageData = uploadedImages.find(img => img.id === imageId);
+            if (!imageData) return;
+
+            const formData = new FormData();
+            formData.append('image', imageData.file);
+
+            // Show loading
+            const resultDiv = $(`#result-${imageId}`);
+            resultDiv.show().html(`
+                <div class="text-center">
+                    <div class="spinner-border spinner-border-sm loading-spinner" role="status"></div>
+                    <span class="ms-2">Analyzing with ResNet50...</span>
+                </div>
+            `);
+
+            // CSRF token
+            $.ajaxSetup({
+                beforeSend: function(xhr, settings) {
+                    if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type) && !this.crossDomain) {
+                        xhr.setRequestHeader("X-CSRFToken", $('meta[name=csrf-token]').attr('content'));
                     }
-                });
-                const result = await response.json();
-                if (result.success && result.redirect) {
-                    window.location.href = result.redirect;
-                } else {
-                    throw new Error(result.message || 'Failed to save report');
                 }
-            } catch (error) {
-                alert(`Error: ${error.message}`);
-            } finally {
-                hideGlobalLoader();
+            });
+
+            $.ajax({
+                url: '/doctor/api/analyze',
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.status === 'success') {
+                        const analysis = response.analysis;
+                        analysisResults[imageId] = analysis;
+                        
+                        const badgeClass = analysis.classification === 'malignant' ? 'badge-malignant' : 'badge-benign';
+                        const confidence = (analysis.confidence * 100).toFixed(1);
+                        
+                        resultDiv.html(`
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge ${badgeClass}">${analysis.classification.toUpperCase()}</span>
+                                <small class="text-muted">${confidence}% confidence</small>
+                            </div>
+                            <div class="small">
+                                <div>Benign: ${(analysis.probabilities.benign * 100).toFixed(1)}%</div>
+                                <div>Malignant: ${(analysis.probabilities.malignant * 100).toFixed(1)}%</div>
+                            </div>
+                            <div class="small text-muted mt-1">Model: ${analysis.model_used} v${analysis.model_version}</div>
+                        `);
+                        
+                        // Mark as analyzed
+                        imageData.analyzed = true;
+                    } else {
+                        resultDiv.html(`
+                            <div class="text-danger">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                Analysis failed: ${response.message}
+                            </div>
+                        `);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    resultDiv.html(`
+                        <div class="text-danger">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Error: Unable to analyze image
+                        </div>
+                    `);
+                }
+            });
+        };
+
+        // Delete image
+        window.deleteImage = function(imageId) {
+            uploadedImages = uploadedImages.filter(img => img.id !== imageId);
+            delete analysisResults[imageId];
+            $(`.image-card[data-image-id="${imageId}"]`).remove();
+        };
+
+        // Form submission handler
+        $('#reportForm').submit(function(e) {
+            e.preventDefault();
+            
+            if (uploadedImages.length === 0) {
+                alert('Please upload at least one image');
+                return;
             }
+
+            // Show global loader
+            $('#globalLoader').show();
+            $('#loadingText').text('Saving Report...');
+
+            const formData = new FormData(this);
+            
+            // Add images and analysis results
+            uploadedImages.forEach((imageData, index) => {
+                formData.append(`image_${index}`, imageData.file);
+                if (analysisResults[imageData.id]) {
+                    formData.append(`analysis_${index}`, JSON.stringify(analysisResults[imageData.id]));
+                }
+            });
+
+            // Currently only using ResNet
+            formData.append('model', 'resnet_cbam');
+
+            $.ajax({
+                url: $(this).attr('action'),
+                method: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#globalLoader').hide();
+                    if (response.success) {
+                        window.location.href = response.redirect || '/doctor/patients';
+                    } else {
+                        alert('Error saving report: ' + (response.message || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#globalLoader').hide();
+                    alert('Error saving report. Please try again.');
+                }
+            });
         });
+    });
     </script>
+
 </body>
 </html>
