@@ -1,7 +1,7 @@
-# Fixed resnet.py
 import torch
 import torch.nn as nn
 from torchvision.models import resnet50, ResNet50_Weights
+import os  
 
 class MelanomaResNet(nn.Module):
     def __init__(self, dropout_rate=0.3, weights_path=None):
@@ -31,6 +31,10 @@ class MelanomaResNet(nn.Module):
     def load_custom_weights(self, weights_path):
         """Load custom trained weights"""
         try:
+            # Resolve relative paths
+            if not os.path.isabs(weights_path):
+                weights_path = os.path.abspath(weights_path)
+                
             # Check if weights file exists
             if not os.path.exists(weights_path):
                 print(f"Weights file not found at: {weights_path}")

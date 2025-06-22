@@ -60,17 +60,20 @@ class AIService:
         ])
         self._log_info("Image transform initialized")
 
+
     def _load_model(self):
         try:
-            # FIXED: Import os module
             import os
-            # FIXED: Use direct import path
             from app.modelai.resnet import MelanomaResNet
             
             # Get weights path from config or use default
             weights_path = None
             if self.app and 'RESNET_PATH' in self.app.config:
                 weights_path = self.app.config['RESNET_PATH']
+                # Convert to absolute path if needed
+                if weights_path and not os.path.isabs(weights_path):
+                    weights_path = os.path.abspath(weights_path)
+                    
                 if weights_path and not os.path.exists(weights_path):
                     self._log_info(f"Custom weights not found at {weights_path}, using base ResNet50")
                     weights_path = None
@@ -81,7 +84,7 @@ class AIService:
             self.model.eval()
             self.model_loaded = True
             self._log_info(f"ResNet model loaded successfully on {self.device}")
-            
+            self._log_info(f"Weights loaded: {self.model.weights_loaded}")
         except Exception as e:
             self._log_error(f"Failed to load model: {str(e)}")
             self.model_loaded = False
